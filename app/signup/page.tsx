@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabaseClient";
 
@@ -28,7 +29,7 @@ export default function SignupPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F6F3EC" }}>
       <div style={{ width: "100%", maxWidth: 380, background: "#FFFDF8", border: "1px solid #E4DDC9", borderRadius: 14, padding: 32 }}>
-        <div style={{ fontSize: 30, marginBottom: 6 }}>🐦</div>
+        <Image src="/bluebird-logo.png" alt="Bluebird" width={150} height={29} style={{ marginBottom: 14 }} priority />
         <h1 className="fraunces" style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 600 }}>
           Create your account
         </h1>

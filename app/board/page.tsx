@@ -21,6 +21,9 @@ export default function BoardPage() {
   const [fitFilter, setFitFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [assigneeFilter, setAssigneeFilter] = useState("All");
+  const [industryFilter, setIndustryFilter] = useState("All");
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
 
   // Auth guard + initial load
   useEffect(() => {
@@ -104,12 +107,19 @@ export default function BoardPage() {
     return Array.from(set).sort();
   }, [companies]);
 
+  const industryOptions = useMemo(() => {
+    const set = new Set<string>();
+    (companies || []).forEach((c) => c.industry && set.add(c.industry));
+    return Array.from(set).sort();
+  }, [companies]);
+
   const filtered = useMemo(() => {
     if (!companies) return [];
     return companies.filter((c) => {
       if (fitFilter !== "All" && c.fit !== fitFilter) return false;
       if (statusFilter !== "All" && (c.status || "New") !== statusFilter) return false;
       if (assigneeFilter !== "All" && (c.assignee_email || "") !== assigneeFilter) return false;
+      if (industryFilter !== "All" && (c.industry || "") !== industryFilter) return false;
       if (!search.trim()) return true;
       const s = search.toLowerCase();
       return (
@@ -119,7 +129,20 @@ export default function BoardPage() {
         (c.location || "").toLowerCase().includes(s)
       );
     });
-  }, [companies, search, fitFilter, statusFilter, assigneeFilter]);
+  }, [companies, search, fitFilter, statusFilter, assigneeFilter, industryFilter]);
+
+  // Reset to page 1 whenever the filtered set or page size changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, fitFilter, statusFilter, assigneeFilter, industryFilter, pageSize]);
+
+  const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(() => {
+    if (pageSize === Infinity) return filtered;
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -190,6 +213,14 @@ export default function BoardPage() {
                 style={{ width: "100%", padding: "9px 12px 9px 34px", borderRadius: 8, border: "1px solid #DCD5C3", background: "#FFFDF8", fontSize: 13 }}
               />
             </div>
+            <select value={fitFilter} onChange={(e) => setFitFilter(e.target.value)} className="mono" style={selectStyle}>
+              <option value="All">All fits</option>
+              {Object.keys(FIT_STYLES).map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="mono" style={selectStyle}>
               <option value="All">All statuses</option>
               {STATUSES.map((s) => (
@@ -204,6 +235,14 @@ export default function BoardPage() {
               {assigneeOptions.map((a) => (
                 <option key={a} value={a}>
                   {a}
+                </option>
+              ))}
+            </select>
+            <select value={industryFilter} onChange={(e) => setIndustryFilter(e.target.value)} className="mono" style={selectStyle}>
+              <option value="All">All industries</option>
+              {industryOptions.map((i) => (
+                <option key={i} value={i}>
+                  {i}
                 </option>
               ))}
             </select>
@@ -239,8 +278,30 @@ export default function BoardPage() {
             </label>
           </div>
 
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
+            <span className="mono" style={{ fontSize: 11, color: "#8A8471" }}>
+              {filtered.length === 0 ? "0 results" : `Showing ${(currentPage - 1) * (pageSize === Infinity ? filtered.length : pageSize) + 1}–${Math.min(currentPage * (pageSize === Infinity ? filtered.length : pageSize), filtered.length)} of ${filtered.length}`}
+            </span>
+            <label className="mono" style={{ fontSize: 11, color: "#8A8471", display: "flex", alignItems: "center", gap: 6 }}>
+              Per page
+              <select
+                value={pageSize === Infinity ? "All" : pageSize}
+                onChange={(e) => setPageSize(e.target.value === "All" ? Infinity : Number(e.target.value))}
+                className="mono"
+                style={{ ...selectStyle, padding: "5px 8px" }}
+              >
+                {[25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+                <option value="All">All</option>
+              </select>
+            </label>
+          </div>
+
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {filtered.map((c) => (
+            {paginated.map((c) => (
               <CompanyRow
                 key={c.id}
                 company={c}
@@ -258,6 +319,30 @@ export default function BoardPage() {
             ))}
             {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8471", fontSize: 13 }}>Nothing matches those filters.</div>}
           </div>
+
+          {totalPages > 1 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 20 }}>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="mono"
+                style={{ ...selectStyle, cursor: currentPage === 1 ? "default" : "pointer", opacity: currentPage === 1 ? 0.5 : 1 }}
+              >
+                Previous
+              </button>
+              <span className="mono" style={{ fontSize: 12, color: "#4A4A3F" }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="mono"
+                style={{ ...selectStyle, cursor: currentPage === totalPages ? "default" : "pointer", opacity: currentPage === totalPages ? 0.5 : 1 }}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

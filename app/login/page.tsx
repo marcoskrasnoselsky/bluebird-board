@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
@@ -32,9 +33,9 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         style={{ width: "100%", maxWidth: 380, background: "#FFFDF8", border: "1px solid #E4DDC9", borderRadius: 14, padding: 32 }}
       >
-        <div style={{ fontSize: 30, marginBottom: 6 }}>🐦</div>
+        <Image src="/bluebird-logo.png" alt="Bluebird" width={150} height={29} style={{ marginBottom: 14 }} priority />
         <h1 className="fraunces" style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 600 }}>
-          Bluebird Prospect Board
+          Prospect Board
         </h1>
         <p style={{ fontSize: 13, color: "#8A8471", margin: "0 0 24px" }}>Sign in to your team account.</p>
 

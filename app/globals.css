@@ -1,0 +1,45 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #f6f3ec;
+  color: #232323;
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+}
+
+::selection {
+  background: #c9743b33;
+}
+
+.mono {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.fraunces {
+  font-family: "Fraunces", serif;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+.row-hover:hover {
+  background: #efeadd !important;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

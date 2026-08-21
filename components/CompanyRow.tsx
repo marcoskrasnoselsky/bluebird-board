@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, ExternalLink, Linkedin, Mail, MessageSquare, Phone } from "lucide-react";
 import Field from "./Field";
 import EditableBlock from "./EditableBlock";
 import TeamNote from "./TeamNote";
-import { Company, Note, STATUSES, FIT_STYLES, STATUS_STYLES, isDNC, cleanPhoneDisplay } from "@/lib/types";
+import { Company, Note, Profile, STATUSES, FIT_STYLES, STATUS_STYLES, isDNC, cleanPhoneDisplay, formatAge } from "@/lib/types";
 
 export default function CompanyRow({
   company,
   notes,
+  profiles,
   expanded,
   onToggle,
   currentUserEmail,
@@ -22,6 +23,7 @@ export default function CompanyRow({
 }: {
   company: Company;
   notes: Note[];
+  profiles: Profile[];
   expanded: boolean;
   onToggle: () => void;
   currentUserEmail: string;
@@ -36,9 +38,13 @@ export default function CompanyRow({
   const statusStyle = STATUS_STYLES[company.status] || STATUS_STYLES["New"];
   const dnc = isDNC(company.phone);
   const phoneDisplay = cleanPhoneDisplay(company.phone);
-  const [assigneeDraft, setAssigneeDraft] = useState(company.assignee_email || "");
   const [noteDraft, setNoteDraft] = useState("");
-  useEffect(() => setAssigneeDraft(company.assignee_email || ""), [company.assignee_email]);
+  const age = formatAge(company.created_at);
+  // The assignee might be a legacy free-text value that doesn't match any registered teammate — keep it selectable so it isn't silently dropped.
+  const assigneeOptions =
+    company.assignee_email && !profiles.some((p) => p.email === company.assignee_email)
+      ? [{ id: company.assignee_email, email: company.assignee_email, created_at: "" }, ...profiles]
+      : profiles;
 
   return (
     <div style={{ border: "1px solid #E4DDC9", borderRadius: 10, background: "#FFFDF8", overflow: "hidden" }}>
@@ -47,7 +53,7 @@ export default function CompanyRow({
         onClick={onToggle}
         style={{
           display: "grid",
-          gridTemplateColumns: "20px 1.5fr 1fr 1.1fr 0.7fr 0.9fr 0.55fr",
+          gridTemplateColumns: "20px 1.4fr 0.9fr 0.65fr 0.5fr 0.85fr 0.75fr 0.5fr",
           gap: 12,
           alignItems: "center",
           padding: "13px 16px",
@@ -87,6 +93,10 @@ export default function CompanyRow({
           )}
         </div>
 
+        <div className="mono" style={{ fontSize: 11, color: "#8A8471" }} title={`Added ${age.full}`}>
+          {age.short}
+        </div>
+
         <div onClick={(e) => e.stopPropagation()}>
           <select
             value={company.status || "New"}
@@ -103,15 +113,27 @@ export default function CompanyRow({
         </div>
 
         <div onClick={(e) => e.stopPropagation()}>
-          <input
-            value={assigneeDraft}
-            onChange={(e) => setAssigneeDraft(e.target.value)}
-            onBlur={() => onUpdateAssignee(assigneeDraft.trim())}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            placeholder="Unassigned"
+          <select
+            value={company.assignee_email || ""}
+            onChange={(e) => onUpdateAssignee(e.target.value)}
             className="mono"
-            style={{ width: "100%", border: "1px solid #E4DDC9", background: "#FFFDF8", borderRadius: 6, padding: "5px 8px", fontSize: 11, color: assigneeDraft ? "#232323" : "#B8B09A" }}
-          />
+            style={{
+              width: "100%",
+              border: "1px solid #E4DDC9",
+              background: "#FFFDF8",
+              borderRadius: 6,
+              padding: "5px 8px",
+              fontSize: 11,
+              color: company.assignee_email ? "#232323" : "#B8B09A",
+            }}
+          >
+            <option value="">Unassigned</option>
+            {assigneeOptions.map((p) => (
+              <option key={p.id} value={p.email}>
+                {p.email}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -151,6 +173,7 @@ export default function CompanyRow({
             <Field label="Phone" value={phoneDisplay} icon={<Phone size={12} />} warn={dnc} />
             <Field label="Contact's LinkedIn" value={company.linkedin_profile} icon={<Linkedin size={12} />} link />
             <Field label="Job posting" value={company.job_posting_url} icon={<ExternalLink size={12} />} link />
+            <Field label="Added to board" value={`${age.full} · ${age.days === 0 ? "today" : `${age.days} day${age.days === 1 ? "" : "s"} in pipeline`}`} />
           </div>
 
           <EditableBlock label="Buying signal" value={company.buying_signal} onSave={(v) => onUpdateField("buying_signal", v)} />

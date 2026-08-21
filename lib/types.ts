@@ -35,6 +35,12 @@ export type Note = {
   edited_at: string | null;
 };
 
+export type Profile = {
+  id: string;
+  email: string;
+  created_at: string;
+};
+
 export const STATUSES = ["New", "Contacted", "In Progress", "Qualified", "Not Interested", "Closed"] as const;
 
 export const FIT_STYLES: Record<string, { bg: string; fg: string; dot: string }> = {
@@ -85,4 +91,19 @@ export function cleanPhoneDisplay(phone: string | null | undefined) {
   if (!phone) return "";
   const parts = phone.split("—");
   return parts.length > 1 ? parts[1].trim() : phone;
+}
+
+// Short relative age (e.g. "3d", "5w", "2mo", "1y") for the "added" column,
+// plus a full date string for the tooltip.
+export function formatAge(dateStr: string) {
+  const then = new Date(dateStr).getTime();
+  const days = Math.max(0, Math.floor((Date.now() - then) / (1000 * 60 * 60 * 24)));
+  let short: string;
+  if (days === 0) short = "Today";
+  else if (days < 7) short = `${days}d`;
+  else if (days < 30) short = `${Math.floor(days / 7)}w`;
+  else if (days < 365) short = `${Math.floor(days / 30)}mo`;
+  else short = `${Math.floor(days / 365)}y`;
+  const full = new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return { short, full, days };
 }

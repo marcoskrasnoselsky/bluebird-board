@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, LogOut, Search, Upload, UserCircle2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Download, LogOut, Search, Upload, User, UserCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
-import { Company, Note, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
+import { Company, Note, Profile, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
 import CompanyRow from "@/components/CompanyRow";
 import UploadZone from "@/components/UploadZone";
+
+type SortField = "company" | "fit" | "status" | "assignee_email" | "created_at";
 
 const supabase = createClient();
 
@@ -15,6 +17,7 @@ export default function BoardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [notesByCompany, setNotesByCompany] = useState<Record<string, Note[]>>({});
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -24,6 +27,8 @@ export default function BoardPage() {
   const [industryFilter, setIndustryFilter] = useState("All");
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>("company");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // Auth guard + initial load
   useEffect(() => {
@@ -47,6 +52,7 @@ export default function BoardPage() {
     setLoading(true);
     const { data: companyRows } = await supabase.from("companies").select("*").order("company", { ascending: true });
     const { data: noteRows } = await supabase.from("notes").select("*").order("created_at", { ascending: true });
+    const { data: profileRows } = await supabase.from("profiles").select("*").order("email", { ascending: true });
     setCompanies(companyRows || []);
     const grouped: Record<string, Note[]> = {};
     (noteRows || []).forEach((n: Note) => {
@@ -54,6 +60,7 @@ export default function BoardPage() {
       grouped[n.company_id].push(n);
     });
     setNotesByCompany(grouped);
+    setProfiles(profileRows || []);
     setLoading(false);
   }, []);
 
@@ -74,10 +81,34 @@ export default function BoardPage() {
     router.replace("/login");
   };
 
+  const normalizeName = (name: string | null | undefined) => (name || "").trim().toLowerCase();
+
   const handleImport = async (rows: Partial<Company>[]) => {
     if (rows.length === 0) return;
-    await supabase.from("companies").insert(rows as any);
+
+    const existingNames = new Set((companies || []).map((c) => normalizeName(c.company)));
+    const seenInBatch = new Set<string>();
+    const toInsert: Partial<Company>[] = [];
+    let skipped = 0;
+
+    for (const row of rows) {
+      const key = normalizeName(row.company);
+      if (!key || existingNames.has(key) || seenInBatch.has(key)) {
+        skipped++;
+        continue;
+      }
+      seenInBatch.add(key);
+      toInsert.push(row);
+    }
+
+    if (toInsert.length > 0) {
+      await supabase.from("companies").insert(toInsert as any);
+    }
     await loadData();
+
+    if (skipped > 0) {
+      alert(`Imported ${toInsert.length} new companies. Skipped ${skipped} already on the board.`);
+    }
   };
 
   const updateField = async (id: string, field: keyof Company, value: string) => {
@@ -102,10 +133,10 @@ export default function BoardPage() {
   };
 
   const assigneeOptions = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(profiles.map((p) => p.email));
     (companies || []).forEach((c) => c.assignee_email && set.add(c.assignee_email));
     return Array.from(set).sort();
-  }, [companies]);
+  }, [companies, profiles]);
 
   const industryOptions = useMemo(() => {
     const set = new Set<string>();
@@ -131,18 +162,69 @@ export default function BoardPage() {
     });
   }, [companies, search, fitFilter, statusFilter, assigneeFilter, industryFilter]);
 
+  const sorted = useMemo(() => {
+    const copy = [...filtered];
+    copy.sort((a, b) => {
+      let av: string | number = "";
+      let bv: string | number = "";
+      if (sortField === "created_at") {
+        av = new Date(a.created_at).getTime();
+        bv = new Date(b.created_at).getTime();
+      } else {
+        av = (a[sortField] || "").toString().toLowerCase();
+        bv = (b[sortField] || "").toString().toLowerCase();
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [filtered, sortField, sortDir]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const exportToExcel = async () => {
+    const XLSX = await import("xlsx");
+    const rows = sorted.map((c) => ({
+      Company: c.company,
+      Website: c.website,
+      Industry: c.industry,
+      Location: c.location,
+      Fit: c.fit,
+      Status: c.status,
+      Assignee: c.assignee_email,
+      "Decision Maker": c.decision_maker,
+      Title: c.title,
+      Phone: c.phone,
+      Email: c.email,
+      "Buying Signal": c.buying_signal,
+      "Added": c.created_at,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Prospects");
+    XLSX.writeFile(wb, `bluebird-prospects-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   // Reset to page 1 whenever the filtered set or page size changes
   useEffect(() => {
     setPage(1);
   }, [search, fitFilter, statusFilter, assigneeFilter, industryFilter, pageSize]);
 
-  const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+  const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const paginated = useMemo(() => {
-    if (pageSize === Infinity) return filtered;
+    if (pageSize === Infinity) return sorted;
     const start = (currentPage - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, currentPage, pageSize]);
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, currentPage, pageSize]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -246,6 +328,25 @@ export default function BoardPage() {
                 </option>
               ))}
             </select>
+            <button
+              onClick={() => setAssigneeFilter(assigneeFilter === userEmail ? "All" : userEmail || "All")}
+              className="mono"
+              style={{
+                ...selectStyle,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                border: assigneeFilter === userEmail ? "1.5px solid #232323" : selectStyle.border,
+                background: assigneeFilter === userEmail ? "#232323" : selectStyle.background,
+                color: assigneeFilter === userEmail ? "#F6F3EC" : selectStyle.color,
+              }}
+            >
+              <User size={13} /> My companies
+            </button>
+            <button onClick={exportToExcel} className="mono" style={{ ...selectStyle, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+              <Download size={13} /> Export
+            </button>
             <label className="mono" style={{ ...selectStyle, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
               <Upload size={13} /> Import more
               <input
@@ -300,12 +401,37 @@ export default function BoardPage() {
             </label>
           </div>
 
+          <div
+            className="mono"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "20px 1.4fr 0.9fr 0.65fr 0.5fr 0.85fr 0.75fr 0.5fr",
+              gap: 12,
+              padding: "0 16px 8px",
+              fontSize: 10,
+              color: "#8A8471",
+              letterSpacing: "0.03em",
+            }}
+          >
+            <span />
+            <SortHeader label="COMPANY" field="company" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+            <span>CONTACT</span>
+            <span>PHONE</span>
+            <SortHeader label="ADDED" field="created_at" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="STATUS" field="status" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+            <SortHeader label="ASSIGNEE" field="assignee_email" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+            <div style={{ textAlign: "right" }}>
+              <SortHeader label="FIT" field="fit" sortField={sortField} sortDir={sortDir} onSort={toggleSort} align="right" />
+            </div>
+          </div>
+
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {paginated.map((c) => (
               <CompanyRow
                 key={c.id}
                 company={c}
                 notes={notesByCompany[c.id] || []}
+                profiles={profiles}
                 expanded={expanded === c.id}
                 onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
                 currentUserEmail={userEmail}
@@ -369,6 +495,47 @@ function StatChip({ label, value, color, onClick, active }: { label: string; val
     >
       {color && <span style={{ width: 8, height: 8, borderRadius: 99, background: color, display: "inline-block" }} />}
       {label} <span style={{ opacity: 0.6 }}>{value}</span>
+    </button>
+  );
+}
+
+function SortHeader({
+  label,
+  field,
+  sortField,
+  sortDir,
+  onSort,
+  align,
+}: {
+  label: string;
+  field: SortField;
+  sortField: SortField;
+  sortDir: "asc" | "desc";
+  onSort: (field: SortField) => void;
+  align?: "right";
+}) {
+  const active = sortField === field;
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className="mono"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 3,
+        justifyContent: align === "right" ? "flex-end" : "flex-start",
+        background: "none",
+        border: "none",
+        padding: 0,
+        fontSize: 10,
+        letterSpacing: "0.03em",
+        color: active ? "#232323" : "#8A8471",
+        fontWeight: active ? 700 : 400,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+      {active && (sortDir === "asc" ? <ArrowUp size={10} /> : <ArrowDown size={10} />)}
     </button>
   );
 }

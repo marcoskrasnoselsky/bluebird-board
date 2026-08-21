@@ -22,6 +22,7 @@ export type Company = {
   research_notes: string | null;
   status: string;
   assignee_email: string | null;
+  follow_up_date: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -40,6 +41,20 @@ export type Profile = {
   email: string;
   created_at: string;
 };
+
+export type StatusChange = {
+  id: string;
+  company_id: string;
+  old_status: string | null;
+  new_status: string;
+  changed_by: string | null;
+  changed_at: string;
+};
+
+export const SIGNUP_EMAIL_DOMAIN = "getbluebirdsolutions.com";
+
+// Days since a row was last touched before we call it "stale" in the UI.
+export const STALE_AFTER_DAYS = 14;
 
 export const STATUSES = ["New", "Contacted", "In Progress", "Qualified", "Not Interested", "Closed"] as const;
 
@@ -106,4 +121,17 @@ export function formatAge(dateStr: string) {
   else short = `${Math.floor(days / 365)}y`;
   const full = new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   return { short, full, days };
+}
+
+// Follow-up dates are stored as plain "YYYY-MM-DD" (no time), so compare at the day level.
+export function isOverdue(followUpDate: string | null | undefined) {
+  if (!followUpDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(followUpDate + "T00:00:00") < today;
+}
+
+export function isStale(updatedAt: string) {
+  const days = Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
+  return days >= STALE_AFTER_DAYS;
 }

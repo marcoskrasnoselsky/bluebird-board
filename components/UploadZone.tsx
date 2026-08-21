@@ -46,7 +46,7 @@ export default function UploadZone({
   };
 
   return (
-    <div style={{ padding: "80px 28px", display: "flex", justifyContent: "center" }}>
+    <div className="board-content" style={{ padding: "80px 28px", display: "flex", justifyContent: "center" }}>
       <div
         onDragOver={(e) => {
           e.preventDefault();

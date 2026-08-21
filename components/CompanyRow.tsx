@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, ChevronRight, ExternalLink, Linkedin, Mail, MessageSquare, Phone } from "lucide-react";
+import { AlertTriangle, CalendarClock, ChevronDown, ChevronRight, Clock, ExternalLink, Linkedin, Mail, MessageSquare, Phone } from "lucide-react";
 import Field from "./Field";
 import EditableBlock from "./EditableBlock";
 import TeamNote from "./TeamNote";
-import { Company, Note, Profile, STATUSES, FIT_STYLES, STATUS_STYLES, isDNC, cleanPhoneDisplay, formatAge } from "@/lib/types";
+import { Company, Note, Profile, StatusChange, STATUSES, FIT_STYLES, STATUS_STYLES, isDNC, cleanPhoneDisplay, formatAge, isOverdue, isStale } from "@/lib/types";
 
 export default function CompanyRow({
   company,
   notes,
+  history,
   profiles,
   expanded,
+  selected,
+  onToggleSelect,
   onToggle,
   currentUserEmail,
   onUpdateField,
@@ -23,11 +26,14 @@ export default function CompanyRow({
 }: {
   company: Company;
   notes: Note[];
+  history: StatusChange[];
   profiles: Profile[];
   expanded: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   onToggle: () => void;
   currentUserEmail: string;
-  onUpdateField: (field: keyof Company, value: string) => void;
+  onUpdateField: (field: keyof Company, value: string | null) => void;
   onUpdateStatus: (status: string) => void;
   onUpdateAssignee: (email: string) => void;
   onAddNote: (text: string) => void;
@@ -40,6 +46,8 @@ export default function CompanyRow({
   const phoneDisplay = cleanPhoneDisplay(company.phone);
   const [noteDraft, setNoteDraft] = useState("");
   const age = formatAge(company.created_at);
+  const overdue = isOverdue(company.follow_up_date);
+  const stale = !overdue && isStale(company.updated_at);
   // The assignee might be a legacy free-text value that doesn't match any registered teammate — keep it selectable so it isn't silently dropped.
   const assigneeOptions =
     company.assignee_email && !profiles.some((p) => p.email === company.assignee_email)
@@ -47,19 +55,35 @@ export default function CompanyRow({
       : profiles;
 
   return (
-    <div style={{ border: "1px solid #E4DDC9", borderRadius: 10, background: "#FFFDF8", overflow: "hidden" }}>
+    <div
+      style={{
+        border: "1px solid #E4DDC9",
+        borderLeft: overdue ? "4px solid #B84C4C" : stale ? "4px solid #C99A3B" : "1px solid #E4DDC9",
+        borderRadius: 10,
+        background: "#FFFDF8",
+        overflow: "hidden",
+        minWidth: 820,
+      }}
+    >
       <div
         className="row-hover"
         onClick={onToggle}
         style={{
           display: "grid",
-          gridTemplateColumns: "20px 1.4fr 0.9fr 0.65fr 0.5fr 0.85fr 0.75fr 0.5fr",
+          gridTemplateColumns: "18px 20px 1.3fr 0.85fr 0.55fr 0.45fr 0.6fr 0.8fr 0.7fr 0.45fr",
           gap: 12,
           alignItems: "center",
           padding: "13px 16px",
           cursor: "pointer",
         }}
       >
+        <input
+          type="checkbox"
+          checked={selected}
+          onClick={(e) => e.stopPropagation()}
+          onChange={onToggleSelect}
+          style={{ cursor: "pointer" }}
+        />
         {expanded ? <ChevronDown size={15} color="#8A8471" /> : <ChevronRight size={15} color="#8A8471" />}
         <div>
           <div style={{ fontWeight: 600, fontSize: 14 }}>{company.company}</div>
@@ -95,6 +119,25 @@ export default function CompanyRow({
 
         <div className="mono" style={{ fontSize: 11, color: "#8A8471" }} title={`Added ${age.full}`}>
           {age.short}
+        </div>
+
+        <div onClick={(e) => e.stopPropagation()}>
+          <input
+            type="date"
+            value={company.follow_up_date || ""}
+            onChange={(e) => onUpdateField("follow_up_date", e.target.value || null)}
+            className="mono"
+            title={overdue ? "Follow-up overdue" : "Next follow-up date"}
+            style={{
+              width: "100%",
+              border: overdue ? "1px solid #B84C4C" : "1px solid #E4DDC9",
+              background: overdue ? "#F1DEDD" : "#FFFDF8",
+              color: overdue ? "#8A2E2E" : "#4A4A3F",
+              borderRadius: 6,
+              padding: "5px 4px",
+              fontSize: 10,
+            }}
+          />
         </div>
 
         <div onClick={(e) => e.stopPropagation()}>
@@ -174,7 +217,32 @@ export default function CompanyRow({
             <Field label="Contact's LinkedIn" value={company.linkedin_profile} icon={<Linkedin size={12} />} link />
             <Field label="Job posting" value={company.job_posting_url} icon={<ExternalLink size={12} />} link />
             <Field label="Added to board" value={`${age.full} · ${age.days === 0 ? "today" : `${age.days} day${age.days === 1 ? "" : "s"} in pipeline`}`} />
+            <Field
+              label="Last updated"
+              value={`${formatAge(company.updated_at).full}${stale ? " · no activity in 14+ days" : ""}`}
+              warn={stale}
+            />
           </div>
+
+          {stale && (
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "flex-start",
+                background: "#F3ECD9",
+                color: "#7A5C1E",
+                padding: "10px 12px",
+                borderRadius: 8,
+                fontSize: 12,
+                marginBottom: 16,
+                lineHeight: 1.5,
+              }}
+            >
+              <Clock size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>This company hasn't been touched in 14+ days — might be worth a follow-up.</span>
+            </div>
+          )}
 
           <EditableBlock label="Buying signal" value={company.buying_signal} onSave={(v) => onUpdateField("buying_signal", v)} />
           <EditableBlock label="Opportunity intelligence summary" value={company.opportunity_summary} onSave={(v) => onUpdateField("opportunity_summary", v)} />
@@ -216,6 +284,22 @@ export default function CompanyRow({
               </button>
             </div>
           </div>
+
+          {history.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #EDE7D6" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#4A4A3F", marginBottom: 10 }}>
+                <CalendarClock size={13} /> Status history
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {history.map((h) => (
+                  <div key={h.id} className="mono" style={{ fontSize: 11, color: "#8A8471" }}>
+                    {h.old_status ? `${h.old_status} → ${h.new_status}` : h.new_status}
+                    {h.changed_by ? ` · ${h.changed_by}` : ""} · {new Date(h.changed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowDown, ArrowUp, Download, LogOut, Search, Upload, User, UserCircle2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Download, LogOut, Search, Upload, User, UserCircle2, X } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
-import { Company, Note, Profile, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
+import { Company, Note, Profile, StatusChange, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
 import CompanyRow from "@/components/CompanyRow";
 import UploadZone from "@/components/UploadZone";
 
-type SortField = "company" | "fit" | "status" | "assignee_email" | "created_at";
+type SortField = "company" | "fit" | "status" | "assignee_email" | "created_at" | "follow_up_date";
 
 const supabase = createClient();
 
@@ -17,9 +17,11 @@ export default function BoardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [notesByCompany, setNotesByCompany] = useState<Record<string, Note[]>>({});
+  const [historyByCompany, setHistoryByCompany] = useState<Record<string, StatusChange[]>>({});
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [fitFilter, setFitFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -53,6 +55,7 @@ export default function BoardPage() {
     const { data: companyRows } = await supabase.from("companies").select("*").order("company", { ascending: true });
     const { data: noteRows } = await supabase.from("notes").select("*").order("created_at", { ascending: true });
     const { data: profileRows } = await supabase.from("profiles").select("*").order("email", { ascending: true });
+    const { data: historyRows } = await supabase.from("status_history").select("*").order("changed_at", { ascending: true });
     setCompanies(companyRows || []);
     const grouped: Record<string, Note[]> = {};
     (noteRows || []).forEach((n: Note) => {
@@ -60,6 +63,12 @@ export default function BoardPage() {
       grouped[n.company_id].push(n);
     });
     setNotesByCompany(grouped);
+    const historyGrouped: Record<string, StatusChange[]> = {};
+    (historyRows || []).forEach((h: StatusChange) => {
+      historyGrouped[h.company_id] = historyGrouped[h.company_id] || [];
+      historyGrouped[h.company_id].push(h);
+    });
+    setHistoryByCompany(historyGrouped);
     setProfiles(profileRows || []);
     setLoading(false);
   }, []);
@@ -70,6 +79,7 @@ export default function BoardPage() {
       .channel("board-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "companies" }, () => loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "notes" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "status_history" }, () => loadData())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -111,9 +121,34 @@ export default function BoardPage() {
     }
   };
 
-  const updateField = async (id: string, field: keyof Company, value: string) => {
+  const updateField = async (id: string, field: keyof Company, value: string | null) => {
     setCompanies((prev) => (prev ? prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)) : prev));
     await supabase.from("companies").update({ [field]: value }).eq("id", id);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkSetStatus = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    await supabase.from("companies").update({ status }).in("id", ids);
+    setSelectedIds(new Set());
+    await loadData();
+  };
+
+  const bulkSetAssignee = async (email: string | null) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    await supabase.from("companies").update({ assignee_email: email }).in("id", ids);
+    setSelectedIds(new Set());
+    await loadData();
   };
 
   const addNote = async (companyId: string, text: string) => {
@@ -170,6 +205,9 @@ export default function BoardPage() {
       if (sortField === "created_at") {
         av = new Date(a.created_at).getTime();
         bv = new Date(b.created_at).getTime();
+      } else if (sortField === "follow_up_date") {
+        av = a.follow_up_date ? new Date(a.follow_up_date).getTime() : Infinity;
+        bv = b.follow_up_date ? new Date(b.follow_up_date).getTime() : Infinity;
       } else {
         av = (a[sortField] || "").toString().toLowerCase();
         bv = (b[sortField] || "").toString().toLowerCase();
@@ -205,6 +243,7 @@ export default function BoardPage() {
       Phone: c.phone,
       Email: c.email,
       "Buying Signal": c.buying_signal,
+      "Follow-up Date": c.follow_up_date,
       "Added": c.created_at,
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -213,9 +252,10 @@ export default function BoardPage() {
     XLSX.writeFile(wb, `bluebird-prospects-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  // Reset to page 1 whenever the filtered set or page size changes
+  // Reset to page 1 and clear selection whenever the filtered set or page size changes
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
   }, [search, fitFilter, statusFilter, assigneeFilter, industryFilter, pageSize]);
 
   const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -242,7 +282,7 @@ export default function BoardPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F6F3EC" }}>
-      <div style={{ background: "#1F2E2B", color: "#F6F3EC", padding: "20px 28px" }}>
+      <div className="board-header" style={{ background: "#1F2E2B", color: "#F6F3EC", padding: "20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
             <span className="fraunces" style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em" }}>
@@ -270,7 +310,7 @@ export default function BoardPage() {
       {!companies || companies.length === 0 ? (
         <UploadZone onParsed={handleImport} />
       ) : (
-        <div style={{ padding: "24px 28px 60px" }}>
+        <div className="board-content" style={{ padding: "24px 28px 60px" }}>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
             <StatChip label="Total" value={companies.length} onClick={() => setFitFilter("All")} active={fitFilter === "All"} />
             {Object.entries(FIT_STYLES).map(([fit, style]) =>
@@ -401,49 +441,125 @@ export default function BoardPage() {
             </label>
           </div>
 
-          <div
-            className="mono"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "20px 1.4fr 0.9fr 0.65fr 0.5fr 0.85fr 0.75fr 0.5fr",
-              gap: 12,
-              padding: "0 16px 8px",
-              fontSize: 10,
-              color: "#8A8471",
-              letterSpacing: "0.03em",
-            }}
-          >
-            <span />
-            <SortHeader label="COMPANY" field="company" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
-            <span>CONTACT</span>
-            <span>PHONE</span>
-            <SortHeader label="ADDED" field="created_at" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
-            <SortHeader label="STATUS" field="status" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
-            <SortHeader label="ASSIGNEE" field="assignee_email" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
-            <div style={{ textAlign: "right" }}>
-              <SortHeader label="FIT" field="fit" sortField={sortField} sortDir={sortDir} onSort={toggleSort} align="right" />
+          {selectedIds.size > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+                background: "#232323",
+                color: "#F6F3EC",
+                borderRadius: 10,
+                padding: "10px 14px",
+                marginBottom: 12,
+              }}
+            >
+              <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>
+                {selectedIds.size} selected
+              </span>
+              <select
+                onChange={(e) => e.target.value && bulkSetStatus(e.target.value)}
+                value=""
+                className="mono"
+                style={{ ...selectStyle, padding: "6px 8px" }}
+              >
+                <option value="">Set status...</option>
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <select
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  bulkSetAssignee(e.target.value === "__unassigned__" ? null : e.target.value);
+                }}
+                value=""
+                className="mono"
+                style={{ ...selectStyle, padding: "6px 8px" }}
+              >
+                <option value="">Assign to...</option>
+                <option value="__unassigned__">Unassigned</option>
+                {assigneeOptions.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="mono"
+                style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "1px solid #4A5D56", borderRadius: 8, padding: "6px 10px", color: "#F6F3EC", fontSize: 12 }}
+              >
+                <X size={12} /> Clear
+              </button>
             </div>
-          </div>
+          )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {paginated.map((c) => (
-              <CompanyRow
-                key={c.id}
-                company={c}
-                notes={notesByCompany[c.id] || []}
-                profiles={profiles}
-                expanded={expanded === c.id}
-                onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
-                currentUserEmail={userEmail}
-                onUpdateField={(field, value) => updateField(c.id, field, value)}
-                onUpdateStatus={(status) => updateField(c.id, "status", status)}
-                onUpdateAssignee={(email) => updateField(c.id, "assignee_email", email)}
-                onAddNote={(text) => addNote(c.id, text)}
-                onEditNote={(noteId, text) => editNote(noteId, text)}
-                onDeleteNote={(noteId) => deleteNote(noteId)}
+          <div style={{ overflowX: "auto" }}>
+            <div
+              className="mono"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "18px 20px 1.3fr 0.85fr 0.55fr 0.45fr 0.6fr 0.8fr 0.7fr 0.45fr",
+                gap: 12,
+                padding: "0 16px 8px",
+                fontSize: 10,
+                color: "#8A8471",
+                letterSpacing: "0.03em",
+                minWidth: 820,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={paginated.length > 0 && paginated.every((c) => selectedIds.has(c.id))}
+                onChange={(e) => {
+                  setSelectedIds((prev) => {
+                    const next = new Set(prev);
+                    paginated.forEach((c) => (e.target.checked ? next.add(c.id) : next.delete(c.id)));
+                    return next;
+                  });
+                }}
+                style={{ cursor: "pointer" }}
               />
-            ))}
-            {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8471", fontSize: 13 }}>Nothing matches those filters.</div>}
+              <span />
+              <SortHeader label="COMPANY" field="company" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <span>CONTACT</span>
+              <span>PHONE</span>
+              <SortHeader label="ADDED" field="created_at" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="FOLLOW-UP" field="follow_up_date" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="STATUS" field="status" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="ASSIGNEE" field="assignee_email" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+              <div style={{ textAlign: "right" }}>
+                <SortHeader label="FIT" field="fit" sortField={sortField} sortDir={sortDir} onSort={toggleSort} align="right" />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {paginated.map((c) => (
+                <CompanyRow
+                  key={c.id}
+                  company={c}
+                  notes={notesByCompany[c.id] || []}
+                  history={historyByCompany[c.id] || []}
+                  profiles={profiles}
+                  expanded={expanded === c.id}
+                  selected={selectedIds.has(c.id)}
+                  onToggleSelect={() => toggleSelect(c.id)}
+                  onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
+                  currentUserEmail={userEmail}
+                  onUpdateField={(field, value) => updateField(c.id, field, value)}
+                  onUpdateStatus={(status) => updateField(c.id, "status", status)}
+                  onUpdateAssignee={(email) => updateField(c.id, "assignee_email", email)}
+                  onAddNote={(text) => addNote(c.id, text)}
+                  onEditNote={(noteId, text) => editNote(noteId, text)}
+                  onDeleteNote={(noteId) => deleteNote(noteId)}
+                />
+              ))}
+              {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8471", fontSize: 13, minWidth: 300 }}>Nothing matches those filters.</div>}
+            </div>
           </div>
 
           {totalPages > 1 && (

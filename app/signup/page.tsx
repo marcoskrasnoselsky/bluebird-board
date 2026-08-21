@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabaseClient";
+import { SIGNUP_EMAIL_DOMAIN } from "@/lib/types";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,12 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!email.toLowerCase().endsWith(`@${SIGNUP_EMAIL_DOMAIN}`)) {
+      setError(`Only @${SIGNUP_EMAIL_DOMAIN} email addresses can sign up for this board.`);
+      return;
+    }
+
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signUp({ email, password });
@@ -34,7 +41,7 @@ export default function SignupPage() {
           Create your account
         </h1>
         <p style={{ fontSize: 13, color: "#8A8471", margin: "0 0 24px" }}>
-          Anyone with this link can sign up — share it only with your team.
+          Sign up with your @{SIGNUP_EMAIL_DOMAIN} email — share this link only with your team.
         </p>
 
         {done ? (
@@ -48,7 +55,7 @@ export default function SignupPage() {
         ) : (
           <form onSubmit={handleSubmit}>
             <label className="mono" style={{ fontSize: 11, color: "#8A8471" }}>EMAIL</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} placeholder="you@bluebird.com" />
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} placeholder={`you@${SIGNUP_EMAIL_DOMAIN}`} />
 
             <label className="mono" style={{ fontSize: 11, color: "#8A8471", marginTop: 14, display: "block" }}>PASSWORD</label>
             <input

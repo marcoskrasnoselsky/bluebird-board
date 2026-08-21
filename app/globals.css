@@ -38,6 +38,15 @@ select {
   background: #efeadd !important;
 }
 
+@media (max-width: 640px) {
+  .board-content {
+    padding: 16px 12px 40px !important;
+  }
+  .board-header {
+    padding: 16px 16px !important;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

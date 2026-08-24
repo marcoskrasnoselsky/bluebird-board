@@ -318,11 +318,9 @@ export default function BoardPage() {
         <div className="board-content" style={{ padding: "24px 28px 60px" }}>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20, alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <StatChip label="Total" value={companies.length} onClick={() => setFitFilter("All")} active={fitFilter === "All"} />
+              <StatChip label="Total" value={companies.length} />
               {Object.entries(FIT_STYLES).map(([fit, style]) =>
-                counts[fit] ? (
-                  <StatChip key={fit} label={fit} value={counts[fit]} color={style.dot} onClick={() => setFitFilter(fit)} active={fitFilter === fit} />
-                ) : null
+                counts[fit] ? <StatChip key={fit} label={fit} value={counts[fit]} color={style.dot} /> : null
               )}
               {dncCount > 0 && (
                 <div className="mono" style={{ display: "flex", alignItems: "center", gap: 6, background: "#F1DEDD", color: "#8A2E2E", padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
@@ -566,10 +564,9 @@ export default function BoardPage() {
   );
 }
 
-function StatChip({ label, value, color, onClick, active }: { label: string; value: number; color?: string; onClick: () => void; active: boolean }) {
+function StatChip({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <button
-      onClick={onClick}
+    <div
       className="mono"
       style={{
         display: "flex",
@@ -577,16 +574,16 @@ function StatChip({ label, value, color, onClick, active }: { label: string; val
         gap: 8,
         padding: "8px 14px",
         borderRadius: 8,
-        border: active ? "1.5px solid #232323" : "1px solid #DCD5C3",
-        background: active ? "#232323" : "#FFFDF8",
-        color: active ? "#F6F3EC" : "#4A4A3F",
+        border: "1px solid #DCD5C3",
+        background: "#FFFDF8",
+        color: "#4A4A3F",
         fontSize: 12,
         fontWeight: 600,
       }}
     >
       {color && <span style={{ width: 8, height: 8, borderRadius: 99, background: color, display: "inline-block" }} />}
       {label} <span style={{ opacity: 0.6 }}>{value}</span>
-    </button>
+    </div>
   );
 }
 

@@ -16,16 +16,16 @@ export default function Field({
   if (!value) {
     return (
       <div>
-        <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 3 }}>
+        <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 3 }}>
           {label.toUpperCase()}
         </div>
-        <div style={{ fontSize: 13, color: "#C9C2AC" }}>—</div>
+        <div style={{ fontSize: 13, color: "#8A8471" }}>—</div>
       </div>
     );
   }
   return (
     <div>
-      <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 3, display: "flex", alignItems: "center", gap: 4 }}>
+      <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 3, display: "flex", alignItems: "center", gap: 4 }}>
         {icon} {label.toUpperCase()}
       </div>
       {link ? (

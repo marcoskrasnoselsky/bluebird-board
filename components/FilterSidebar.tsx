@@ -93,13 +93,13 @@ export default function FilterSidebar({
         <div className="mono" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#4A4A3F", letterSpacing: "0.03em" }}>
           <Filter size={12} /> FILTERS
         </div>
-        <button onClick={onToggle} title="Hide filters" style={{ background: "none", border: "none", color: "#8A8471", display: "flex" }}>
+        <button onClick={onToggle} title="Hide filters" style={{ background: "none", border: "none", color: "#6B6656", display: "flex" }}>
           <PanelLeftClose size={15} />
         </button>
       </div>
 
       <div style={{ position: "relative" }}>
-        <Search size={14} style={{ position: "absolute", left: 10, top: 10, color: "#8A8471" }} />
+        <Search size={14} style={{ position: "absolute", left: 10, top: 10, color: "#6B6656" }} />
         <input
           value={search}
           onChange={(e) => onSearch(e.target.value)}
@@ -109,7 +109,7 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <label className="mono" style={{ fontSize: 10, color: "#8A8471" }}>
+        <label className="mono" style={{ fontSize: 10, color: "#6B6656" }}>
           FIT
         </label>
         <select value={fitFilter} onChange={(e) => onFitFilter(e.target.value)} className="mono" style={{ ...selectStyle, marginTop: 4 }}>
@@ -123,7 +123,7 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <label className="mono" style={{ fontSize: 10, color: "#8A8471" }}>
+        <label className="mono" style={{ fontSize: 10, color: "#6B6656" }}>
           STATUS
         </label>
         <select value={statusFilter} onChange={(e) => onStatusFilter(e.target.value)} className="mono" style={{ ...selectStyle, marginTop: 4 }}>
@@ -137,7 +137,7 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <label className="mono" style={{ fontSize: 10, color: "#8A8471" }}>
+        <label className="mono" style={{ fontSize: 10, color: "#6B6656" }}>
           ASSIGNEE
         </label>
         <select value={assigneeFilter} onChange={(e) => onAssigneeFilter(e.target.value)} className="mono" style={{ ...selectStyle, marginTop: 4 }}>
@@ -152,7 +152,7 @@ export default function FilterSidebar({
       </div>
 
       <div>
-        <label className="mono" style={{ fontSize: 10, color: "#8A8471" }}>
+        <label className="mono" style={{ fontSize: 10, color: "#6B6656" }}>
           INDUSTRY
         </label>
         <select value={industryFilter} onChange={(e) => onIndustryFilter(e.target.value)} className="mono" style={{ ...selectStyle, marginTop: 4 }}>
@@ -186,7 +186,7 @@ export default function FilterSidebar({
         <button
           onClick={onClearAll}
           className="mono"
-          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: "#8A8471", fontSize: 11, padding: 0, textDecoration: "underline" }}
+          style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: "#6B6656", fontSize: 11, padding: 0, textDecoration: "underline" }}
         >
           <X size={11} /> Clear all filters
         </button>

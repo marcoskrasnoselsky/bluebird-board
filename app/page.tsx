@@ -15,7 +15,7 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8471" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6656" }}>
       Loading...
     </div>
   );

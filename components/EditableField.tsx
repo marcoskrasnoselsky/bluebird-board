@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pencil } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Pencil } from "lucide-react";
 
 export default function EditableField({
   label,
@@ -20,21 +20,32 @@ export default function EditableField({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value || "");
+  const [justSaved, setJustSaved] = useState(false);
+  const savedTimeout = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => setDraft(value || ""), [value]);
+  useEffect(() => () => clearTimeout(savedTimeout.current), []);
 
   const save = () => {
     onSave(draft.trim());
     setEditing(false);
+    setJustSaved(true);
+    clearTimeout(savedTimeout.current);
+    savedTimeout.current = setTimeout(() => setJustSaved(false), 1600);
   };
 
   return (
     <div>
-      <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+      <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
         {label.toUpperCase()}
         {!editing && (
-          <button onClick={() => setEditing(true)} title={`Edit ${label}`} style={{ background: "none", border: "none", padding: 0, color: "#8A8471", display: "flex" }}>
+          <button onClick={() => setEditing(true)} title={`Edit ${label}`} style={{ background: "none", border: "none", padding: 0, color: "#6B6656", display: "flex" }}>
             <Pencil size={10} />
           </button>
+        )}
+        {!editing && justSaved && (
+          <span style={{ display: "flex", alignItems: "center", gap: 2, color: "#4A7C59" }}>
+            <Check size={10} /> Saved
+          </span>
         )}
       </div>
       {editing ? (
@@ -66,7 +77,7 @@ export default function EditableField({
           <div style={{ fontSize: 13, color: warn ? "#8A2E2E" : "#232323", fontWeight: warn ? 600 : 400, wordBreak: "break-word" }}>{value}</div>
         )
       ) : (
-        <div style={{ fontSize: 13, color: "#C9C2AC" }}>—</div>
+        <div style={{ fontSize: 13, color: "#8A8471" }}>—</div>
       )}
     </div>
   );

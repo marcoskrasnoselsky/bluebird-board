@@ -14,7 +14,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 13,
 };
 
-const labelStyle: React.CSSProperties = { fontSize: 11, color: "#8A8471" };
+const labelStyle: React.CSSProperties = { fontSize: 11, color: "#6B6656" };
 
 export default function AddCompanyModal({
   onClose,
@@ -69,11 +69,11 @@ export default function AddCompanyModal({
           <h2 className="fraunces" style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
             Add a company
           </h2>
-          <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: "#8A8471", display: "flex" }}>
+          <button type="button" onClick={onClose} style={{ background: "none", border: "none", color: "#6B6656", display: "flex" }}>
             <X size={18} />
           </button>
         </div>
-        <p style={{ fontSize: 12, color: "#8A8471", margin: "0 0 20px" }}>It'll be assigned to you — you can fill in the rest of the details afterward.</p>
+        <p style={{ fontSize: 12, color: "#6B6656", margin: "0 0 20px" }}>It'll be assigned to you — you can fill in the rest of the details afterward.</p>
 
         <label className="mono" style={labelStyle}>
           COMPANY NAME *

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 
 export default function EditableBlock({
   label,
@@ -13,18 +14,34 @@ export default function EditableBlock({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value || "");
+  const [justSaved, setJustSaved] = useState(false);
+  const savedTimeout = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => setDraft(value || ""), [value]);
+  useEffect(() => () => clearTimeout(savedTimeout.current), []);
+
+  const save = () => {
+    onSave(draft);
+    setEditing(false);
+    setJustSaved(true);
+    clearTimeout(savedTimeout.current);
+    savedTimeout.current = setTimeout(() => setJustSaved(false), 1600);
+  };
 
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
-        <div className="mono" style={{ fontSize: 10, color: "#B8B09A" }}>
+        <div className="mono" style={{ fontSize: 10, color: "#8A8471", display: "flex", alignItems: "center", gap: 8 }}>
           {label.toUpperCase()}
+          {!editing && justSaved && (
+            <span style={{ display: "flex", alignItems: "center", gap: 2, color: "#4A7C59", textTransform: "none" }}>
+              <Check size={10} /> Saved
+            </span>
+          )}
         </div>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            style={{ background: "none", border: "none", fontSize: 11, color: "#8A8471", textDecoration: "underline" }}
+            style={{ background: "none", border: "none", fontSize: 11, color: "#6B6656", textDecoration: "underline" }}
           >
             edit
           </button>
@@ -49,10 +66,7 @@ export default function EditableBlock({
           />
           <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
             <button
-              onClick={() => {
-                onSave(draft);
-                setEditing(false);
-              }}
+              onClick={save}
               style={{ background: "#232323", color: "#F6F3EC", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}
             >
               Save

@@ -22,14 +22,14 @@ export default function TeamNote({
   return (
     <div style={{ background: "#FFFDF8", border: "1px solid #EDE7D6", borderRadius: 8, padding: "8px 12px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 3 }}>
+        <div className="mono" style={{ fontSize: 10, color: "#6B6656", marginBottom: 3 }}>
           {note.author_email} ·{" "}
           {new Date(note.created_at).toLocaleString("en-US", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
           {note.edited_at && <span style={{ fontStyle: "italic" }}> · edited</span>}
         </div>
         {!editing && canManage && (
           <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-            <button onClick={() => setEditing(true)} title="Edit note" style={{ background: "none", border: "none", padding: 3, color: "#8A8471", display: "flex" }}>
+            <button onClick={() => setEditing(true)} title="Edit note" style={{ background: "none", border: "none", padding: 3, color: "#6B6656", display: "flex" }}>
               <Pencil size={12} />
             </button>
             <button onClick={onDelete} title="Delete note" style={{ background: "none", border: "none", padding: 3, color: "#B84C4C", display: "flex" }}>

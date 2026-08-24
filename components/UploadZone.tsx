@@ -73,7 +73,7 @@ export default function UploadZone({
         <div className="fraunces" style={{ fontSize: 20, marginBottom: 8, color: "#232323" }}>
           Import the prospect spreadsheet
         </div>
-        <div style={{ fontSize: 13, color: "#8A8471", marginBottom: 24, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: "#6B6656", marginBottom: 24, lineHeight: 1.5 }}>
           The Excel file (with a "Prospects" sheet). This adds new companies to the shared board — everyone on the
           team will see them.
         </div>

@@ -38,12 +38,36 @@ select {
   background: #efeadd !important;
 }
 
+.detail-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.detail-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+
 @media (max-width: 640px) {
   .board-content {
     padding: 16px 12px 40px !important;
   }
   .board-header {
     padding: 16px 16px !important;
+  }
+  .detail-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .detail-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .detail-grid-4 {
+    grid-template-columns: 1fr;
   }
 }
 

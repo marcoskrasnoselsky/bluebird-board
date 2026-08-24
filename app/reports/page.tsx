@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, LogOut, UserCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
-import { Company, ActivityLogEntry, Profile } from "@/lib/types";
+import { Company, ActivityLogEntry, Profile, emailLocalPart } from "@/lib/types";
 
 const supabase = createClient();
 
@@ -160,7 +160,7 @@ export default function ReportsPage() {
   }, [activityInRange, companies, profiles]);
 
   if (loading || !userEmail) {
-    return <div style={{ padding: 60, textAlign: "center", color: "#8A8471" }}>Loading...</div>;
+    return <div style={{ padding: 60, textAlign: "center", color: "#6B6656" }}>Loading...</div>;
   }
 
   return (
@@ -226,11 +226,11 @@ export default function ReportsPage() {
         {/* Companies added by day */}
         <Section title="Companies added, by day">
           {addedByDay.length === 0 ? (
-            <div style={{ fontSize: 12, color: "#B8B09A" }}>Nothing added in this range.</div>
+            <div style={{ fontSize: 12, color: "#8A8471" }}>Nothing added in this range.</div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr className="mono" style={{ fontSize: 10, color: "#8A8471", textAlign: "left" }}>
+                <tr className="mono" style={{ fontSize: 10, color: "#6B6656", textAlign: "left" }}>
                   <th style={thStyle}>DATE</th>
                   <th style={thStyle}>IMPORTED</th>
                   <th style={thStyle}>MANUAL</th>
@@ -254,12 +254,12 @@ export default function ReportsPage() {
         {/* Rep activity */}
         <Section title="Rep activity">
           {repStats.length === 0 ? (
-            <div style={{ fontSize: 12, color: "#B8B09A" }}>No activity in this range.</div>
+            <div style={{ fontSize: 12, color: "#8A8471" }}>No activity in this range.</div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 700 }}>
                 <thead>
-                  <tr className="mono" style={{ fontSize: 10, color: "#8A8471", textAlign: "left" }}>
+                  <tr className="mono" style={{ fontSize: 10, color: "#6B6656", textAlign: "left" }}>
                     <th style={thStyle}>REP</th>
                     <th style={thStyle}>COMPANIES ADDED</th>
                     <th style={thStyle}>NOTES</th>
@@ -274,7 +274,9 @@ export default function ReportsPage() {
                 <tbody>
                   {repStats.map((s) => (
                     <tr key={s.email} style={{ borderTop: "1px solid #EDE7D6" }}>
-                      <td style={{ ...tdStyle, fontWeight: 600 }}>{s.email}</td>
+                      <td style={{ ...tdStyle, fontWeight: 600 }} title={s.email}>
+                        {emailLocalPart(s.email)}
+                      </td>
                       <td style={tdStyle}>{s.companiesCreated}</td>
                       <td style={tdStyle}>{s.notes}</td>
                       <td style={tdStyle}>{s.statusChanges}</td>
@@ -298,7 +300,7 @@ export default function ReportsPage() {
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ background: "#FFFDF8", border: "1px solid #E4DDC9", borderRadius: 12, padding: "16px 18px" }}>
-      <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 6, letterSpacing: "0.03em" }}>
+      <div className="mono" style={{ fontSize: 10, color: "#6B6656", marginBottom: 6, letterSpacing: "0.03em" }}>
         {label.toUpperCase()}
       </div>
       <div className="fraunces" style={{ fontSize: 28, fontWeight: 600 }}>

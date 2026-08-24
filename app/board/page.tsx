@@ -275,7 +275,7 @@ export default function BoardPage() {
   const dncCount = useMemo(() => (companies || []).filter((c) => isDNC(c.phone)).length, [companies]);
 
   if (loading || !userEmail) {
-    return <div style={{ padding: 60, textAlign: "center", color: "#8A8471" }}>Loading...</div>;
+    return <div style={{ padding: 60, textAlign: "center", color: "#6B6656" }}>Loading...</div>;
   }
 
   return (
@@ -397,10 +397,10 @@ export default function BoardPage() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
-                <span className="mono" style={{ fontSize: 11, color: "#8A8471" }}>
+                <span className="mono" style={{ fontSize: 11, color: "#6B6656" }}>
                   {filtered.length === 0 ? "0 results" : `Showing ${(currentPage - 1) * (pageSize === Infinity ? filtered.length : pageSize) + 1}–${Math.min(currentPage * (pageSize === Infinity ? filtered.length : pageSize), filtered.length)} of ${filtered.length}`}
                 </span>
-                <label className="mono" style={{ fontSize: 11, color: "#8A8471", display: "flex", alignItems: "center", gap: 6 }}>
+                <label className="mono" style={{ fontSize: 11, color: "#6B6656", display: "flex", alignItems: "center", gap: 6 }}>
                   Per page
                   <select
                     value={pageSize === Infinity ? "All" : pageSize}
@@ -484,7 +484,7 @@ export default function BoardPage() {
                     gap: 8,
                     padding: "0 14px 8px",
                     fontSize: 10,
-                    color: "#8A8471",
+                    color: "#6B6656",
                     letterSpacing: "0.03em",
                     minWidth: 700,
                   }}
@@ -527,7 +527,7 @@ export default function BoardPage() {
                       onUpdateFollowUp={(date) => updateField(c.id, "follow_up_date", date)}
                     />
                   ))}
-                  {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8471", fontSize: 13, minWidth: 300 }}>Nothing matches those filters.</div>}
+                  {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#6B6656", fontSize: 13, minWidth: 300 }}>Nothing matches those filters.</div>}
                 </div>
               </div>
 
@@ -617,7 +617,7 @@ function SortHeader({
         padding: 0,
         fontSize: 10,
         letterSpacing: "0.03em",
-        color: active ? "#232323" : "#8A8471",
+        color: active ? "#232323" : "#6B6656",
         fontWeight: active ? 700 : 400,
         cursor: "pointer",
       }}

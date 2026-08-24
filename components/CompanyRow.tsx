@@ -66,7 +66,7 @@ export default function CompanyRow({
           <div
             className="mono"
             title={`${company.industry || ""} · ${company.location || ""}`}
-            style={{ fontSize: 11, color: "#8A8471", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            style={{ fontSize: 11, color: "#6B6656", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
           >
             {company.industry} · {company.location}
           </div>
@@ -80,13 +80,13 @@ export default function CompanyRow({
               <div
                 className="mono"
                 title={company.title || ""}
-                style={{ fontSize: 11, color: "#8A8471", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                style={{ fontSize: 11, color: "#6B6656", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
               >
                 {company.title}
               </div>
             </>
           ) : (
-            <span style={{ color: "#B8B09A", fontSize: 12 }}>No name found</span>
+            <span style={{ color: "#8A8471", fontSize: 12 }}>No name found</span>
           )}
         </div>
         <div className="mono" style={{ fontSize: 12 }}>
@@ -96,14 +96,14 @@ export default function CompanyRow({
             </span>
           ) : phoneDisplay ? (
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <Phone size={11} color="#8A8471" /> {phoneDisplay}
+              <Phone size={11} color="#6B6656" /> {phoneDisplay}
             </span>
           ) : (
-            <span style={{ color: "#B8B09A" }}>—</span>
+            <span style={{ color: "#8A8471" }}>—</span>
           )}
         </div>
 
-        <div className="mono" style={{ fontSize: 11, color: "#8A8471" }} title={`Added ${age.full}`}>
+        <div className="mono" style={{ fontSize: 11, color: "#6B6656" }} title={`Added ${age.full}`}>
           {age.short}
         </div>
 
@@ -153,7 +153,7 @@ export default function CompanyRow({
               borderRadius: 6,
               padding: "5px 4px",
               fontSize: 11,
-              color: company.assignee_email ? "#232323" : "#B8B09A",
+              color: company.assignee_email ? "#232323" : "#8A8471",
             }}
           >
             <option value="">Unassigned</option>

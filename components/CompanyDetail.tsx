@@ -111,13 +111,13 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
   };
 
   if (company === undefined || !userEmail) {
-    return <div style={{ padding: 60, textAlign: "center", color: "#8A8471" }}>Loading...</div>;
+    return <div style={{ padding: 60, textAlign: "center", color: "#6B6656" }}>Loading...</div>;
   }
 
   if (company === null) {
     return (
       <div style={{ padding: 60, textAlign: "center" }}>
-        <div style={{ color: "#8A8471", marginBottom: 12 }}>That company doesn't exist (or was removed).</div>
+        <div style={{ color: "#6B6656", marginBottom: 12 }}>That company doesn't exist (or was removed).</div>
         <button onClick={onClose} style={{ background: "#232323", color: "#F6F3EC", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>
           Back to board
         </button>
@@ -199,9 +199,9 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
         )}
 
         {/* Pipeline controls */}
-        <div style={{ background: "#FFFDF8", border: "1px solid #E4DDC9", borderRadius: 12, padding: 18, marginBottom: 20, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        <div className="detail-grid-4" style={{ background: "#FFFDF8", border: "1px solid #E4DDC9", borderRadius: 12, padding: 18, marginBottom: 20 }}>
           <div>
-            <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 5 }}>
+            <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 5 }}>
               STATUS
             </div>
             <select
@@ -218,7 +218,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
             </select>
           </div>
           <div>
-            <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 5 }}>
+            <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 5 }}>
               FIT
             </div>
             <select
@@ -236,7 +236,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
             </select>
           </div>
           <div>
-            <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 5 }}>
+            <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 5 }}>
               ASSIGNEE
             </div>
             <select
@@ -254,7 +254,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
             </select>
           </div>
           <div>
-            <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 5 }}>
+            <div className="mono" style={{ fontSize: 10, color: "#8A8471", marginBottom: 5 }}>
               FOLLOW-UP DATE
             </div>
             <input
@@ -277,7 +277,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
 
         {/* Company info */}
         <Section title="Company info">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px" }}>
+          <div className="detail-grid-2">
             <EditableField label="Company name" value={company.company} onSave={(v) => updateField("company", v)} />
             <EditableField label="Website" value={company.website} onSave={(v) => updateField("website", v)} link />
             <EditableField label="Industry" value={company.industry} onSave={(v) => updateField("industry", v)} />
@@ -289,7 +289,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
 
         {/* Contact */}
         <Section title="Contact">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px" }}>
+          <div className="detail-grid-2">
             <EditableField label="Decision maker" value={company.decision_maker} onSave={(v) => updateField("decision_maker", v)} />
             <EditableField label="Title" value={company.title} onSave={(v) => updateField("title", v)} />
             <EditableField label="Phone" value={phoneDisplay} onSave={(v) => updateField("phone", v)} warn={dnc} />
@@ -304,7 +304,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
           <EditableBlock label="Opportunity intelligence summary" value={company.opportunity_summary} onSave={(v) => updateField("opportunity_summary", v)} />
           <EditableBlock label="Hiring roles" value={company.hiring_roles} onSave={(v) => updateField("hiring_roles", v)} />
           <EditableBlock label="Research notes" value={company.research_notes} onSave={(v) => updateField("research_notes", v)} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px", marginTop: 4 }}>
+          <div className="detail-grid-2" style={{ marginTop: 4 }}>
             <EditableField label="Job posting" value={company.job_posting_url} onSave={(v) => updateField("job_posting_url", v)} link />
             <EditableField label="Research source" value={company.research_source} onSave={(v) => updateField("research_source", v)} />
           </div>
@@ -316,7 +316,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
             {notes.map((n) => (
               <TeamNote key={n.id} note={n} currentUserEmail={userEmail} onEdit={(text) => editNote(n.id, text)} onDelete={() => deleteNote(n.id)} />
             ))}
-            {notes.length === 0 && <div style={{ fontSize: 12, color: "#B8B09A" }}>No notes yet.</div>}
+            {notes.length === 0 && <div style={{ fontSize: 12, color: "#8A8471" }}>No notes yet.</div>}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <input
@@ -334,13 +334,13 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
 
         {/* Activity log */}
         <Section title="Activity log" icon={<CalendarClock size={14} />}>
-          <div style={{ fontSize: 11, color: "#B8B09A", marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: "#8A8471", marginBottom: 10 }}>
             Added to the board {age.full} ({age.days === 0 ? "today" : `${age.days} day${age.days === 1 ? "" : "s"} ago`}) · source: {company.source}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {activity.map((entry) => (
               <div key={entry.id} style={{ display: "flex", gap: 8, fontSize: 12.5, lineHeight: 1.5 }}>
-                <span className="mono" style={{ color: "#B8B09A", flexShrink: 0, minWidth: 110 }}>
+                <span className="mono" style={{ color: "#8A8471", flexShrink: 0, minWidth: 110 }}>
                   {new Date(entry.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </span>
                 <span>
@@ -348,7 +348,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
                 </span>
               </div>
             ))}
-            {activity.length === 0 && <div style={{ fontSize: 12, color: "#B8B09A" }}>No activity recorded yet.</div>}
+            {activity.length === 0 && <div style={{ fontSize: 12, color: "#8A8471" }}>No activity recorded yet.</div>}
           </div>
         </Section>
       </div>

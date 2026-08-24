@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
+import { SIGNUP_EMAIL_DOMAIN } from "@/lib/types";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,19 +38,19 @@ export default function LoginPage() {
         <h1 className="fraunces" style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 600 }}>
           Prospect Board
         </h1>
-        <p style={{ fontSize: 13, color: "#8A8471", margin: "0 0 24px" }}>Sign in to your team account.</p>
+        <p style={{ fontSize: 13, color: "#6B6656", margin: "0 0 24px" }}>Sign in to your team account.</p>
 
-        <label className="mono" style={{ fontSize: 11, color: "#8A8471" }}>EMAIL</label>
+        <label className="mono" style={{ fontSize: 11, color: "#6B6656" }}>EMAIL</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={inputStyle}
-          placeholder="you@bluebird.com"
+          placeholder={`you@${SIGNUP_EMAIL_DOMAIN}`}
         />
 
-        <label className="mono" style={{ fontSize: 11, color: "#8A8471", marginTop: 14, display: "block" }}>PASSWORD</label>
+        <label className="mono" style={{ fontSize: 11, color: "#6B6656", marginTop: 14, display: "block" }}>PASSWORD</label>
         <input
           type="password"
           required
@@ -69,7 +70,7 @@ export default function LoginPage() {
           {loading ? "Signing in..." : "Sign in"}
         </button>
 
-        <p style={{ fontSize: 12, color: "#8A8471", marginTop: 18, textAlign: "center" }}>
+        <p style={{ fontSize: 12, color: "#6B6656", marginTop: 18, textAlign: "center" }}>
           No account yet? <Link href="/signup" style={{ color: "#2F5233" }}>Create one</Link>
         </p>
       </form>

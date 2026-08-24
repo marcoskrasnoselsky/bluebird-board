@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, Download, LogOut, Plus, Upload, UserCircle2, X } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
@@ -283,10 +284,10 @@ export default function BoardPage() {
     <div style={{ minHeight: "100vh", background: "#F6F3EC" }}>
       <div className="board-header" style={{ background: "#1F2E2B", color: "#F6F3EC", padding: "20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <span className="fraunces" style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em" }}>
-              Bluebird
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ background: "#FFFDF8", borderRadius: 8, padding: "5px 10px", display: "flex", alignItems: "center" }}>
+              <Image src="/bluebird-logo.png" alt="Bluebird" width={100} height={19} priority />
+            </div>
             <span className="mono" style={{ fontSize: 12, opacity: 0.6, letterSpacing: "0.04em" }}>
               PROSPECT BOARD
             </span>

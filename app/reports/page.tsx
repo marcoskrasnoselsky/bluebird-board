@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ArrowLeft, LogOut, UserCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
 import { Company, ActivityLogEntry, Profile, emailLocalPart } from "@/lib/types";
@@ -169,6 +170,9 @@ export default function ReportsPage() {
       <div className="board-header" style={{ background: "#1F2E2B", color: "#F6F3EC", padding: "20px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ background: "#FFFDF8", borderRadius: 8, padding: "5px 10px", display: "flex", alignItems: "center" }}>
+              <Image src="/bluebird-logo.png" alt="Bluebird" width={100} height={19} priority />
+            </div>
             <button
               onClick={() => router.push("/board")}
               className="mono"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, LogOut, UserCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
 import { Company, ActivityLogEntry, Profile, emailLocalPart } from "@/lib/types";
+import Spinner from "@/components/Spinner";
 
 const supabase = createClient();
 
@@ -160,7 +161,7 @@ export default function ReportsPage() {
   }, [activityInRange, companies, profiles]);
 
   if (loading || !userEmail) {
-    return <div style={{ padding: 60, textAlign: "center", color: "#6B6656" }}>Loading...</div>;
+    return <Spinner />;
   }
 
   return (

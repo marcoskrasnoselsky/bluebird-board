@@ -22,6 +22,7 @@ import {
 import EditableField from "@/components/EditableField";
 import EditableBlock from "@/components/EditableBlock";
 import TeamNote from "@/components/TeamNote";
+import Spinner from "@/components/Spinner";
 
 const supabase = createClient();
 
@@ -111,7 +112,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
   };
 
   if (company === undefined || !userEmail) {
-    return <div style={{ padding: 60, textAlign: "center", color: "#6B6656" }}>Loading...</div>;
+    return <Spinner label="Loading company..." />;
   }
 
   if (company === null) {

@@ -9,6 +9,7 @@ import CompanyRow from "@/components/CompanyRow";
 import UploadZone from "@/components/UploadZone";
 import AddCompanyModal from "@/components/AddCompanyModal";
 import FilterSidebar from "@/components/FilterSidebar";
+import Spinner from "@/components/Spinner";
 
 type SortField = "company" | "fit" | "status" | "assignee_email" | "created_at" | "follow_up_date";
 
@@ -275,7 +276,7 @@ export default function BoardPage() {
   const dncCount = useMemo(() => (companies || []).filter((c) => isDNC(c.phone)).length, [companies]);
 
   if (loading || !userEmail) {
-    return <div style={{ padding: 60, textAlign: "center", color: "#6B6656" }}>Loading...</div>;
+    return <Spinner />;
   }
 
   return (

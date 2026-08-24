@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Phone } from "lucide-react";
-import { Company, Profile, STATUSES, FIT_STYLES, STATUS_STYLES, isDNC, cleanPhoneDisplay, formatAge, isOverdue, isStale } from "@/lib/types";
+import { Company, Profile, STATUSES, FIT_STYLES, STATUS_STYLES, isDNC, cleanPhoneDisplay, formatAge, isOverdue, isStale, emailLocalPart } from "@/lib/types";
 
 export default function CompanyRow({
   company,
@@ -47,31 +47,41 @@ export default function CompanyRow({
         borderRadius: 10,
         background: "#FFFDF8",
         overflow: "hidden",
-        minWidth: 820,
+        minWidth: 700,
         cursor: "pointer",
       }}
     >
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "18px 1.3fr 0.85fr 0.55fr 0.45fr 0.6fr 0.7fr 0.7fr 0.45fr",
-          gap: 12,
+          gridTemplateColumns: "18px 1.4fr 0.8fr 0.5fr 0.4fr 0.55fr 0.65fr 0.5fr 0.45fr",
+          gap: 8,
           alignItems: "center",
-          padding: "13px 16px",
+          padding: "13px 14px",
         }}
       >
         <input type="checkbox" checked={selected} onClick={(e) => e.stopPropagation()} onChange={onToggleSelect} style={{ cursor: "pointer" }} />
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 14 }}>{company.company}</div>
-          <div className="mono" style={{ fontSize: 11, color: "#8A8471", marginTop: 2 }}>
+          <div
+            className="mono"
+            title={`${company.industry || ""} · ${company.location || ""}`}
+            style={{ fontSize: 11, color: "#8A8471", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
             {company.industry} · {company.location}
           </div>
         </div>
-        <div style={{ fontSize: 13 }}>
+        <div style={{ fontSize: 13, minWidth: 0 }}>
           {company.decision_maker && company.decision_maker !== "Not identified" ? (
             <>
-              <div style={{ fontWeight: 500 }}>{company.decision_maker.split(" (")[0]}</div>
-              <div className="mono" style={{ fontSize: 11, color: "#8A8471" }}>
+              <div style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={company.decision_maker}>
+                {company.decision_maker.split(" (")[0]}
+              </div>
+              <div
+                className="mono"
+                title={company.title || ""}
+                style={{ fontSize: 11, color: "#8A8471", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              >
                 {company.title}
               </div>
             </>
@@ -131,7 +141,7 @@ export default function CompanyRow({
           </select>
         </div>
 
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()} title={company.assignee_email || "Unassigned"}>
           <select
             value={company.assignee_email || ""}
             onChange={(e) => onUpdateAssignee(e.target.value)}
@@ -141,7 +151,7 @@ export default function CompanyRow({
               border: "1px solid #E4DDC9",
               background: "#FFFDF8",
               borderRadius: 6,
-              padding: "5px 8px",
+              padding: "5px 4px",
               fontSize: 11,
               color: company.assignee_email ? "#232323" : "#B8B09A",
             }}
@@ -149,7 +159,7 @@ export default function CompanyRow({
             <option value="">Unassigned</option>
             {assigneeOptions.map((p) => (
               <option key={p.id} value={p.email}>
-                {p.email}
+                {emailLocalPart(p.email)}
               </option>
             ))}
           </select>

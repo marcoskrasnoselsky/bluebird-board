@@ -198,6 +198,12 @@ export function isOverdue(followUpDate: string | null | undefined) {
   return new Date(followUpDate + "T00:00:00") < today;
 }
 
+// Everyone shares the same email domain, so the part before "@" is enough to identify a teammate
+// in tight UI spots (dropdowns, table cells) — full email stays in the value/title for clarity.
+export function emailLocalPart(email: string) {
+  return email.split("@")[0];
+}
+
 export function isStale(updatedAt: string) {
   const days = Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
   return days >= STALE_AFTER_DAYS;

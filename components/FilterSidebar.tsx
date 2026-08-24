@@ -1,7 +1,7 @@
 "use client";
 
 import { Filter, PanelLeftClose, PanelLeftOpen, Search, User, X } from "lucide-react";
-import { FIT_STYLES, STATUSES } from "@/lib/types";
+import { FIT_STYLES, STATUSES, emailLocalPart } from "@/lib/types";
 
 const selectStyle: React.CSSProperties = {
   width: "100%",
@@ -76,7 +76,19 @@ export default function FilterSidebar({
   }
 
   return (
-    <div style={{ flexShrink: 0, width: 220, display: "flex", flexDirection: "column", gap: 14 }}>
+    <div
+      style={{
+        flexShrink: 0,
+        width: 200,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+        background: "#FFFDF8",
+        border: "1px solid #E4DDC9",
+        borderRadius: 12,
+        padding: 16,
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div className="mono" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#4A4A3F", letterSpacing: "0.03em" }}>
           <Filter size={12} /> FILTERS
@@ -133,7 +145,7 @@ export default function FilterSidebar({
           <option value="">Unassigned</option>
           {assigneeOptions.map((a) => (
             <option key={a} value={a}>
-              {a}
+              {emailLocalPart(a)}
             </option>
           ))}
         </select>

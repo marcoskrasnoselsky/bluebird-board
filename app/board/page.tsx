@@ -482,13 +482,13 @@ export default function BoardPage() {
                   className="mono"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "18px 1.3fr 0.85fr 0.55fr 0.45fr 0.6fr 0.7fr 0.7fr 0.45fr",
-                    gap: 12,
-                    padding: "0 16px 8px",
+                    gridTemplateColumns: "18px 1.4fr 0.8fr 0.5fr 0.4fr 0.55fr 0.65fr 0.5fr 0.45fr",
+                    gap: 8,
+                    padding: "0 14px 8px",
                     fontSize: 10,
                     color: "#8A8471",
                     letterSpacing: "0.03em",
-                    minWidth: 820,
+                    minWidth: 700,
                   }}
                 >
                   <input

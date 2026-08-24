@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ArrowDown, ArrowUp, Download, LogOut, Search, Upload, User, UserCircle2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, Download, LogOut, Plus, Search, Upload, User, UserCircle2, X } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
-import { Company, Note, Profile, StatusChange, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
+import { Company, Profile, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
 import CompanyRow from "@/components/CompanyRow";
 import UploadZone from "@/components/UploadZone";
+import AddCompanyModal from "@/components/AddCompanyModal";
 
 type SortField = "company" | "fit" | "status" | "assignee_email" | "created_at" | "follow_up_date";
 
@@ -16,12 +17,10 @@ export default function BoardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[] | null>(null);
-  const [notesByCompany, setNotesByCompany] = useState<Record<string, Note[]>>({});
-  const [historyByCompany, setHistoryByCompany] = useState<Record<string, StatusChange[]>>({});
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showAddModal, setShowAddModal] = useState(false);
   const [search, setSearch] = useState("");
   const [fitFilter, setFitFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -53,22 +52,8 @@ export default function BoardPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     const { data: companyRows } = await supabase.from("companies").select("*").order("company", { ascending: true });
-    const { data: noteRows } = await supabase.from("notes").select("*").order("created_at", { ascending: true });
     const { data: profileRows } = await supabase.from("profiles").select("*").order("email", { ascending: true });
-    const { data: historyRows } = await supabase.from("status_history").select("*").order("changed_at", { ascending: true });
     setCompanies(companyRows || []);
-    const grouped: Record<string, Note[]> = {};
-    (noteRows || []).forEach((n: Note) => {
-      grouped[n.company_id] = grouped[n.company_id] || [];
-      grouped[n.company_id].push(n);
-    });
-    setNotesByCompany(grouped);
-    const historyGrouped: Record<string, StatusChange[]> = {};
-    (historyRows || []).forEach((h: StatusChange) => {
-      historyGrouped[h.company_id] = historyGrouped[h.company_id] || [];
-      historyGrouped[h.company_id].push(h);
-    });
-    setHistoryByCompany(historyGrouped);
     setProfiles(profileRows || []);
     setLoading(false);
   }, []);
@@ -78,8 +63,6 @@ export default function BoardPage() {
     const channel = supabase
       .channel("board-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "companies" }, () => loadData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "notes" }, () => loadData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "status_history" }, () => loadData())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -121,6 +104,22 @@ export default function BoardPage() {
     }
   };
 
+  const handleCreateCompany = async (form: Partial<Company>) => {
+    const key = normalizeName(form.company);
+    if (key && (companies || []).some((c) => normalizeName(c.company) === key)) {
+      alert(`"${form.company}" is already on the board.`);
+      return;
+    }
+    await supabase.from("companies").insert({
+      ...form,
+      status: "New",
+      source: "manual",
+      assignee_email: userEmail,
+    } as any);
+    await loadData();
+    setShowAddModal(false);
+  };
+
   const updateField = async (id: string, field: keyof Company, value: string | null) => {
     setCompanies((prev) => (prev ? prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)) : prev));
     await supabase.from("companies").update({ [field]: value }).eq("id", id);
@@ -148,22 +147,6 @@ export default function BoardPage() {
     if (ids.length === 0) return;
     await supabase.from("companies").update({ assignee_email: email }).in("id", ids);
     setSelectedIds(new Set());
-    await loadData();
-  };
-
-  const addNote = async (companyId: string, text: string) => {
-    if (!userEmail) return;
-    await supabase.from("notes").insert({ company_id: companyId, author_email: userEmail, text });
-    await loadData();
-  };
-
-  const editNote = async (noteId: string, text: string) => {
-    await supabase.from("notes").update({ text, edited_at: new Date().toISOString() }).eq("id", noteId);
-    await loadData();
-  };
-
-  const deleteNote = async (noteId: string) => {
-    await supabase.from("notes").delete().eq("id", noteId);
     await loadData();
   };
 
@@ -293,6 +276,13 @@ export default function BoardPage() {
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={() => router.push("/reports")}
+              className="mono"
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "1px solid #4A5D56", borderRadius: 8, padding: "6px 12px", color: "#F6F3EC", fontSize: 12 }}
+            >
+              <BarChart3 size={13} /> Reports
+            </button>
             <span className="mono" style={{ fontSize: 12, background: "#33453F", padding: "6px 12px", borderRadius: 20, display: "flex", alignItems: "center", gap: 6 }}>
               <UserCircle2 size={13} /> {userEmail}
             </span>
@@ -311,18 +301,27 @@ export default function BoardPage() {
         <UploadZone onParsed={handleImport} />
       ) : (
         <div className="board-content" style={{ padding: "24px 28px 60px" }}>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-            <StatChip label="Total" value={companies.length} onClick={() => setFitFilter("All")} active={fitFilter === "All"} />
-            {Object.entries(FIT_STYLES).map(([fit, style]) =>
-              counts[fit] ? (
-                <StatChip key={fit} label={fit} value={counts[fit]} color={style.dot} onClick={() => setFitFilter(fit)} active={fitFilter === fit} />
-              ) : null
-            )}
-            {dncCount > 0 && (
-              <div className="mono" style={{ display: "flex", alignItems: "center", gap: 6, background: "#F1DEDD", color: "#8A2E2E", padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
-                <AlertTriangle size={13} /> {dncCount} on DNC — do not call
-              </div>
-            )}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20, alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <StatChip label="Total" value={companies.length} onClick={() => setFitFilter("All")} active={fitFilter === "All"} />
+              {Object.entries(FIT_STYLES).map(([fit, style]) =>
+                counts[fit] ? (
+                  <StatChip key={fit} label={fit} value={counts[fit]} color={style.dot} onClick={() => setFitFilter(fit)} active={fitFilter === fit} />
+                ) : null
+              )}
+              {dncCount > 0 && (
+                <div className="mono" style={{ display: "flex", alignItems: "center", gap: 6, background: "#F1DEDD", color: "#8A2E2E", padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+                  <AlertTriangle size={13} /> {dncCount} on DNC — do not call
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="mono"
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "#C9743B", color: "#FFFDF8", border: "none", borderRadius: 8, padding: "9px 14px", fontSize: 12, fontWeight: 600 }}
+            >
+              <Plus size={14} /> Add company
+            </button>
           </div>
 
           <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
@@ -406,7 +405,7 @@ export default function BoardPage() {
                   const headers = rows[0] as string[];
                   const dataRows = rows.slice(1).filter((r) => r[0]);
                   const parsed = dataRows.map((r) => {
-                    const obj: any = { status: "New" };
+                    const obj: any = { status: "New", source: "import" };
                     headers.forEach((h, i) => {
                       const dbField = (EXCEL_TO_DB as any)[h];
                       if (dbField) obj[dbField] = r[i] !== undefined ? String(r[i]) : "";
@@ -503,7 +502,7 @@ export default function BoardPage() {
               className="mono"
               style={{
                 display: "grid",
-                gridTemplateColumns: "18px 20px 1.3fr 0.85fr 0.55fr 0.45fr 0.6fr 0.8fr 0.7fr 0.45fr",
+                gridTemplateColumns: "18px 1.3fr 0.85fr 0.55fr 0.45fr 0.6fr 0.7fr 0.7fr 0.45fr",
                 gap: 12,
                 padding: "0 16px 8px",
                 fontSize: 10,
@@ -524,7 +523,6 @@ export default function BoardPage() {
                 }}
                 style={{ cursor: "pointer" }}
               />
-              <span />
               <SortHeader label="COMPANY" field="company" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
               <span>CONTACT</span>
               <span>PHONE</span>
@@ -542,20 +540,13 @@ export default function BoardPage() {
                 <CompanyRow
                   key={c.id}
                   company={c}
-                  notes={notesByCompany[c.id] || []}
-                  history={historyByCompany[c.id] || []}
                   profiles={profiles}
-                  expanded={expanded === c.id}
                   selected={selectedIds.has(c.id)}
                   onToggleSelect={() => toggleSelect(c.id)}
-                  onToggle={() => setExpanded(expanded === c.id ? null : c.id)}
-                  currentUserEmail={userEmail}
-                  onUpdateField={(field, value) => updateField(c.id, field, value)}
                   onUpdateStatus={(status) => updateField(c.id, "status", status)}
+                  onUpdateFit={(fit) => updateField(c.id, "fit", fit)}
                   onUpdateAssignee={(email) => updateField(c.id, "assignee_email", email)}
-                  onAddNote={(text) => addNote(c.id, text)}
-                  onEditNote={(noteId, text) => editNote(noteId, text)}
-                  onDeleteNote={(noteId) => deleteNote(noteId)}
+                  onUpdateFollowUp={(date) => updateField(c.id, "follow_up_date", date)}
                 />
               ))}
               {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8471", fontSize: 13, minWidth: 300 }}>Nothing matches those filters.</div>}
@@ -587,6 +578,8 @@ export default function BoardPage() {
           )}
         </div>
       )}
+
+      {showAddModal && <AddCompanyModal onClose={() => setShowAddModal(false)} onCreate={handleCreateCompany} />}
     </div>
   );
 }

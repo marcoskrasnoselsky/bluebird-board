@@ -23,6 +23,7 @@ export type Company = {
   status: string;
   assignee_email: string | null;
   follow_up_date: string | null;
+  source: string;
   created_at: string;
   updated_at: string;
 };
@@ -42,14 +43,80 @@ export type Profile = {
   created_at: string;
 };
 
-export type StatusChange = {
+export type ActivityAction =
+  | "created"
+  | "field_updated"
+  | "status_changed"
+  | "fit_changed"
+  | "assignee_changed"
+  | "note_added"
+  | "note_edited"
+  | "note_deleted";
+
+export type ActivityLogEntry = {
   id: string;
   company_id: string;
-  old_status: string | null;
-  new_status: string;
-  changed_by: string | null;
-  changed_at: string;
+  actor_email: string | null;
+  action: ActivityAction;
+  field_name: string | null;
+  old_value: string | null;
+  new_value: string | null;
+  created_at: string;
 };
+
+export const FIELD_LABELS: Record<string, string> = {
+  company: "company name",
+  website: "website",
+  linkedin: "LinkedIn",
+  industry: "industry",
+  employees: "employee count",
+  location: "location",
+  hiring_roles: "hiring roles",
+  buying_signal: "buying signal",
+  opportunity_summary: "opportunity summary",
+  decision_maker: "decision maker",
+  title: "contact title",
+  phone: "phone",
+  phone_confidence: "phone confidence",
+  email: "email",
+  email_confidence: "email confidence",
+  linkedin_profile: "contact's LinkedIn",
+  job_posting_url: "job posting URL",
+  research_source: "research source",
+  research_notes: "research notes",
+  follow_up_date: "follow-up date",
+};
+
+function truncate(value: string | null, max = 60) {
+  if (!value) return "(empty)";
+  return value.length > max ? value.slice(0, max) + "…" : value;
+}
+
+// Human-readable one-liner for an activity log entry, e.g. "changed Fit from Medium Fit to High Fit".
+export function describeActivity(entry: ActivityLogEntry) {
+  switch (entry.action) {
+    case "created":
+      return `added this company (${entry.new_value || "no name"})`;
+    case "status_changed":
+      return `changed status from ${entry.old_value || "New"} to ${entry.new_value}`;
+    case "fit_changed":
+      return `changed Fit from ${entry.old_value || "unset"} to ${entry.new_value || "unset"}`;
+    case "assignee_changed":
+      return entry.new_value ? `assigned this to ${entry.new_value}` : `unassigned this (was ${entry.old_value})`;
+    case "field_updated": {
+      const label = FIELD_LABELS[entry.field_name || ""] || entry.field_name || "a field";
+      return `updated ${label} to "${truncate(entry.new_value)}"`;
+    }
+    case "note_added":
+      return `added a note: "${truncate(entry.new_value)}"`;
+    case "note_edited":
+      return `edited a note to: "${truncate(entry.new_value)}"`;
+    case "note_deleted":
+      return `deleted a note: "${truncate(entry.old_value)}"`;
+    default:
+      return entry.action;
+  }
+}
 
 export const SIGNUP_EMAIL_DOMAIN = "getbluebirdsolutions.com";
 

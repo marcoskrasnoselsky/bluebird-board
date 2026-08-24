@@ -1,0 +1,73 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Pencil } from "lucide-react";
+
+export default function EditableField({
+  label,
+  value,
+  onSave,
+  placeholder,
+  link,
+  warn,
+}: {
+  label: string;
+  value: string | null | undefined;
+  onSave: (next: string) => void;
+  placeholder?: string;
+  link?: boolean;
+  warn?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || "");
+  useEffect(() => setDraft(value || ""), [value]);
+
+  const save = () => {
+    onSave(draft.trim());
+    setEditing(false);
+  };
+
+  return (
+    <div>
+      <div className="mono" style={{ fontSize: 10, color: "#B8B09A", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+        {label.toUpperCase()}
+        {!editing && (
+          <button onClick={() => setEditing(true)} title={`Edit ${label}`} style={{ background: "none", border: "none", padding: 0, color: "#8A8471", display: "flex" }}>
+            <Pencil size={10} />
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <div style={{ display: "flex", gap: 6 }}>
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") {
+                setDraft(value || "");
+                setEditing(false);
+              }
+            }}
+            placeholder={placeholder}
+            style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #DCD5C3", background: "#FFFDF8", fontSize: 13 }}
+          />
+          <button onClick={save} style={{ background: "#232323", color: "#F6F3EC", border: "none", borderRadius: 6, padding: "0 10px", fontSize: 11, fontWeight: 600 }}>
+            Save
+          </button>
+        </div>
+      ) : value ? (
+        link ? (
+          <a href={value} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#2F5233", wordBreak: "break-all" }}>
+            {value}
+          </a>
+        ) : (
+          <div style={{ fontSize: 13, color: warn ? "#8A2E2E" : "#232323", fontWeight: warn ? 600 : 400, wordBreak: "break-word" }}>{value}</div>
+        )
+      ) : (
+        <div style={{ fontSize: 13, color: "#C9C2AC" }}>—</div>
+      )}
+    </div>
+  );
+}

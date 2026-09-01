@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowDown, ArrowUp, BarChart3, Download, LogOut, Plus, Upload, UserCircle2, X } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
-import { Company, Profile, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
+import { Company, Profile, SavedView, FIT_STYLES, STATUSES, isDNC } from "@/lib/types";
 import CompanyRow from "@/components/CompanyRow";
 import UploadZone from "@/components/UploadZone";
 import AddCompanyModal from "@/components/AddCompanyModal";
@@ -36,6 +36,7 @@ export default function BoardPage() {
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("company");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
 
   // Auth guard + initial load
   useEffect(() => {
@@ -58,6 +59,51 @@ export default function BoardPage() {
   useEffect(() => {
     if (window.innerWidth < 900) setSidebarOpen(false);
   }, []);
+
+  // Saved filter views are per-user, stored locally in this browser
+  useEffect(() => {
+    if (!userEmail) return;
+    try {
+      const raw = window.localStorage.getItem(`bluebird-saved-views:${userEmail}`);
+      setSavedViews(raw ? JSON.parse(raw) : []);
+    } catch {
+      setSavedViews([]);
+    }
+  }, [userEmail]);
+
+  const persistViews = (views: SavedView[]) => {
+    setSavedViews(views);
+    if (userEmail) {
+      try {
+        window.localStorage.setItem(`bluebird-saved-views:${userEmail}`, JSON.stringify(views));
+      } catch {
+        // localStorage unavailable (private browsing, quota, etc.) — view still works for this session
+      }
+    }
+  };
+
+  const saveCurrentView = () => {
+    const name = window.prompt("Name this view:");
+    if (!name || !name.trim()) return;
+    const view: SavedView = { name: name.trim(), search, fitFilter, statusFilter, assigneeFilter, industryFilter, phoneFilter, emailFilter, sortField, sortDir };
+    persistViews([...savedViews.filter((v) => v.name !== view.name), view]);
+  };
+
+  const applyView = (view: SavedView) => {
+    setSearch(view.search);
+    setFitFilter(view.fitFilter);
+    setStatusFilter(view.statusFilter);
+    setAssigneeFilter(view.assigneeFilter);
+    setIndustryFilter(view.industryFilter);
+    setPhoneFilter(view.phoneFilter);
+    setEmailFilter(view.emailFilter);
+    setSortField(view.sortField as SortField);
+    setSortDir(view.sortDir);
+  };
+
+  const deleteView = (name: string) => {
+    persistViews(savedViews.filter((v) => v.name !== name));
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -375,6 +421,10 @@ export default function BoardPage() {
               onToggleMyCompanies={() => setAssigneeFilter(assigneeFilter === userEmail ? "All" : userEmail || "All")}
               onClearAll={clearAllFilters}
               hasActiveFilters={hasActiveFilters}
+              savedViews={savedViews}
+              onSaveView={saveCurrentView}
+              onApplyView={applyView}
+              onDeleteView={deleteView}
             />
 
             <div style={{ flex: 1, minWidth: 0 }}>

@@ -43,6 +43,31 @@ export type Profile = {
   created_at: string;
 };
 
+export type Contact = {
+  id: string;
+  company_id: string;
+  name: string | null;
+  title: string | null;
+  phone: string | null;
+  email: string | null;
+  linkedin_profile: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SavedView = {
+  name: string;
+  search: string;
+  fitFilter: string;
+  statusFilter: string;
+  assigneeFilter: string;
+  industryFilter: string;
+  phoneFilter: string;
+  emailFilter: string;
+  sortField: string;
+  sortDir: "asc" | "desc";
+};
+
 export type ActivityAction =
   | "created"
   | "field_updated"
@@ -51,7 +76,10 @@ export type ActivityAction =
   | "assignee_changed"
   | "note_added"
   | "note_edited"
-  | "note_deleted";
+  | "note_deleted"
+  | "contact_added"
+  | "contact_updated"
+  | "contact_deleted";
 
 export type ActivityLogEntry = {
   id: string;
@@ -113,6 +141,12 @@ export function describeActivity(entry: ActivityLogEntry) {
       return `edited a note to: "${truncate(entry.new_value)}"`;
     case "note_deleted":
       return `deleted a note: "${truncate(entry.old_value)}"`;
+    case "contact_added":
+      return `added a contact: ${entry.new_value}`;
+    case "contact_updated":
+      return `updated a contact: ${entry.new_value}`;
+    case "contact_deleted":
+      return `removed a contact: ${entry.old_value}`;
     default:
       return entry.action;
   }

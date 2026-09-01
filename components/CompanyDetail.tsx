@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarClock, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Plus, UserPlus, X } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
 import {
   Company,
   Note,
   Profile,
+  Contact,
   ActivityLogEntry,
   STATUSES,
   FIT_STYLES,
@@ -22,7 +23,10 @@ import {
 import EditableField from "@/components/EditableField";
 import EditableBlock from "@/components/EditableBlock";
 import TeamNote from "@/components/TeamNote";
+import ContactCard from "@/components/ContactCard";
 import Spinner from "@/components/Spinner";
+
+const emptyContactDraft = { name: "", title: "", phone: "", email: "", linkedin_profile: "" };
 
 const supabase = createClient();
 
@@ -32,13 +36,17 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [company, setCompany] = useState<Company | null | undefined>(undefined);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [noteDraft, setNoteDraft] = useState("");
+  const [addingContact, setAddingContact] = useState(false);
+  const [contactDraft, setContactDraft] = useState(emptyContactDraft);
 
   const loadData = useCallback(async () => {
     const { data: companyRow } = await supabase.from("companies").select("*").eq("id", companyId).maybeSingle();
     const { data: noteRows } = await supabase.from("notes").select("*").eq("company_id", companyId).order("created_at", { ascending: true });
+    const { data: contactRows } = await supabase.from("contacts").select("*").eq("company_id", companyId).order("created_at", { ascending: true });
     const { data: activityRows } = await supabase
       .from("activity_log")
       .select("*")
@@ -47,6 +55,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
     const { data: profileRows } = await supabase.from("profiles").select("*").order("email", { ascending: true });
     setCompany(companyRow ?? null);
     setNotes(noteRows || []);
+    setContacts(contactRows || []);
     setActivity(activityRows || []);
     setProfiles(profileRows || []);
   }, [companyId]);
@@ -72,6 +81,7 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
       .channel(`company-${companyId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "companies", filter: `id=eq.${companyId}` }, () => loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "notes", filter: `company_id=eq.${companyId}` }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "contacts", filter: `company_id=eq.${companyId}` }, () => loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "activity_log", filter: `company_id=eq.${companyId}` }, () => loadData())
       .subscribe();
     return () => {
@@ -108,6 +118,24 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
 
   const deleteNote = async (noteId: string) => {
     await supabase.from("notes").delete().eq("id", noteId);
+    await loadData();
+  };
+
+  const addContact = async () => {
+    if (!contactDraft.name.trim() && !contactDraft.phone.trim() && !contactDraft.email.trim()) return;
+    await supabase.from("contacts").insert({ company_id: companyId, ...contactDraft });
+    setContactDraft(emptyContactDraft);
+    setAddingContact(false);
+    await loadData();
+  };
+
+  const updateContact = async (contactId: string, fields: Partial<Contact>) => {
+    await supabase.from("contacts").update(fields).eq("id", contactId);
+    await loadData();
+  };
+
+  const deleteContact = async (contactId: string) => {
+    await supabase.from("contacts").delete().eq("id", contactId);
     await loadData();
   };
 
@@ -299,6 +327,78 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
           </div>
         </Section>
 
+        {/* Additional contacts */}
+        <Section title={`Additional contacts (${contacts.length})`} icon={<UserPlus size={13} />}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: addingContact ? 10 : 0 }}>
+            {contacts.map((c) => (
+              <ContactCard key={c.id} contact={c} onSave={(fields) => updateContact(c.id, fields)} onDelete={() => deleteContact(c.id)} />
+            ))}
+            {contacts.length === 0 && !addingContact && <div style={{ fontSize: 12, color: "#8A8471" }}>No additional contacts yet.</div>}
+          </div>
+
+          {addingContact ? (
+            <div style={{ background: "#FBF8F0", border: "1px solid #E4DDC9", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <input
+                  placeholder="Name"
+                  value={contactDraft.name}
+                  onChange={(e) => setContactDraft({ ...contactDraft, name: e.target.value })}
+                  style={contactInputStyle}
+                  autoFocus
+                />
+                <input
+                  placeholder="Title"
+                  value={contactDraft.title}
+                  onChange={(e) => setContactDraft({ ...contactDraft, title: e.target.value })}
+                  style={contactInputStyle}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <input
+                  placeholder="Phone"
+                  value={contactDraft.phone}
+                  onChange={(e) => setContactDraft({ ...contactDraft, phone: e.target.value })}
+                  style={contactInputStyle}
+                />
+                <input
+                  placeholder="Email"
+                  value={contactDraft.email}
+                  onChange={(e) => setContactDraft({ ...contactDraft, email: e.target.value })}
+                  style={contactInputStyle}
+                />
+              </div>
+              <input
+                placeholder="LinkedIn"
+                value={contactDraft.linkedin_profile}
+                onChange={(e) => setContactDraft({ ...contactDraft, linkedin_profile: e.target.value })}
+                style={contactInputStyle}
+              />
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={addContact} style={{ background: "#232323", color: "#F6F3EC", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: 11, fontWeight: 600 }}>
+                  Add contact
+                </button>
+                <button
+                  onClick={() => {
+                    setAddingContact(false);
+                    setContactDraft(emptyContactDraft);
+                  }}
+                  style={{ background: "none", border: "1px solid #DCD5C3", borderRadius: 6, padding: "6px 14px", fontSize: 11 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingContact(true)}
+              className="mono"
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "1px solid #DCD5C3", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#4A4A3F" }}
+            >
+              <Plus size={12} /> Add contact
+            </button>
+          )}
+        </Section>
+
         {/* Sales intelligence */}
         <Section title="Sales intelligence">
           <EditableBlock label="Buying signal" value={company.buying_signal} onSave={(v) => updateField("buying_signal", v)} />
@@ -356,6 +456,15 @@ export default function CompanyDetail({ companyId, onClose }: { companyId: strin
     </>
   );
 }
+
+const contactInputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "6px 8px",
+  borderRadius: 6,
+  border: "1px solid #DCD5C3",
+  background: "#FFFDF8",
+  fontSize: 12,
+};
 
 function Section({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (

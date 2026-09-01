@@ -1,7 +1,7 @@
 "use client";
 
-import { Filter, PanelLeftClose, PanelLeftOpen, Search, User, X } from "lucide-react";
-import { FIT_STYLES, STATUSES, emailLocalPart } from "@/lib/types";
+import { Bookmark, Filter, PanelLeftClose, PanelLeftOpen, Save, Search, Trash2, User, X } from "lucide-react";
+import { FIT_STYLES, STATUSES, SavedView, emailLocalPart } from "@/lib/types";
 
 const selectStyle: React.CSSProperties = {
   width: "100%",
@@ -36,6 +36,10 @@ export default function FilterSidebar({
   onToggleMyCompanies,
   onClearAll,
   hasActiveFilters,
+  savedViews,
+  onSaveView,
+  onApplyView,
+  onDeleteView,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -59,6 +63,10 @@ export default function FilterSidebar({
   onToggleMyCompanies: () => void;
   onClearAll: () => void;
   hasActiveFilters: boolean;
+  savedViews: SavedView[];
+  onSaveView: () => void;
+  onApplyView: (view: SavedView) => void;
+  onDeleteView: (name: string) => void;
 }) {
   if (!open) {
     return (
@@ -222,6 +230,38 @@ export default function FilterSidebar({
           <X size={11} /> Clear all filters
         </button>
       )}
+
+      <div style={{ borderTop: "1px solid #EDE7D6", paddingTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="mono" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#4A4A3F", letterSpacing: "0.03em" }}>
+            <Bookmark size={12} /> SAVED VIEWS
+          </div>
+          <button onClick={onSaveView} title="Save current filters as a view" style={{ background: "none", border: "none", color: "#6B6656", display: "flex" }}>
+            <Save size={13} />
+          </button>
+        </div>
+
+        {savedViews.length === 0 ? (
+          <div style={{ fontSize: 11, color: "#8A8471" }}>No saved views yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {savedViews.map((v) => (
+              <div key={v.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  onClick={() => onApplyView(v)}
+                  className="mono"
+                  style={{ flex: 1, textAlign: "left", background: "#FFFDF8", border: "1px solid #E4DDC9", borderRadius: 6, padding: "6px 8px", fontSize: 11.5, color: "#232323", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {v.name}
+                </button>
+                <button onClick={() => onDeleteView(v.name)} title={`Delete "${v.name}"`} style={{ background: "none", border: "none", color: "#B84C4C", display: "flex", flexShrink: 0 }}>
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

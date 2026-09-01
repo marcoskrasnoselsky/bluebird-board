@@ -30,6 +30,8 @@ export default function BoardPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [assigneeFilter, setAssigneeFilter] = useState("All");
   const [industryFilter, setIndustryFilter] = useState("All");
+  const [phoneFilter, setPhoneFilter] = useState("All");
+  const [emailFilter, setEmailFilter] = useState("All");
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("company");
@@ -170,13 +172,17 @@ export default function BoardPage() {
     return Array.from(set).sort();
   }, [companies]);
 
-  const hasActiveFilters = Boolean(search || fitFilter !== "All" || statusFilter !== "All" || assigneeFilter !== "All" || industryFilter !== "All");
+  const hasActiveFilters = Boolean(
+    search || fitFilter !== "All" || statusFilter !== "All" || assigneeFilter !== "All" || industryFilter !== "All" || phoneFilter !== "All" || emailFilter !== "All"
+  );
   const clearAllFilters = () => {
     setSearch("");
     setFitFilter("All");
     setStatusFilter("All");
     setAssigneeFilter("All");
     setIndustryFilter("All");
+    setPhoneFilter("All");
+    setEmailFilter("All");
   };
 
   const filtered = useMemo(() => {
@@ -186,6 +192,12 @@ export default function BoardPage() {
       if (statusFilter !== "All" && (c.status || "New") !== statusFilter) return false;
       if (assigneeFilter !== "All" && (c.assignee_email || "") !== assigneeFilter) return false;
       if (industryFilter !== "All" && (c.industry || "") !== industryFilter) return false;
+      const hasPhone = Boolean(c.phone && c.phone.trim());
+      if (phoneFilter === "Has" && !hasPhone) return false;
+      if (phoneFilter === "Missing" && hasPhone) return false;
+      const hasEmail = Boolean(c.email && c.email.trim());
+      if (emailFilter === "Has" && !hasEmail) return false;
+      if (emailFilter === "Missing" && hasEmail) return false;
       if (!search.trim()) return true;
       const s = search.toLowerCase();
       return (
@@ -195,7 +207,7 @@ export default function BoardPage() {
         (c.location || "").toLowerCase().includes(s)
       );
     });
-  }, [companies, search, fitFilter, statusFilter, assigneeFilter, industryFilter]);
+  }, [companies, search, fitFilter, statusFilter, assigneeFilter, industryFilter, phoneFilter, emailFilter]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -256,7 +268,7 @@ export default function BoardPage() {
   useEffect(() => {
     setPage(1);
     setSelectedIds(new Set());
-  }, [search, fitFilter, statusFilter, assigneeFilter, industryFilter, pageSize]);
+  }, [search, fitFilter, statusFilter, assigneeFilter, industryFilter, phoneFilter, emailFilter, pageSize]);
 
   const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -355,6 +367,10 @@ export default function BoardPage() {
               industryFilter={industryFilter}
               onIndustryFilter={setIndustryFilter}
               industryOptions={industryOptions}
+              phoneFilter={phoneFilter}
+              onPhoneFilter={setPhoneFilter}
+              emailFilter={emailFilter}
+              onEmailFilter={setEmailFilter}
               myCompaniesActive={assigneeFilter === userEmail}
               onToggleMyCompanies={() => setAssigneeFilter(assigneeFilter === userEmail ? "All" : userEmail || "All")}
               onClearAll={clearAllFilters}

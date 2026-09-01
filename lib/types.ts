@@ -204,6 +204,12 @@ export function emailLocalPart(email: string) {
   return email.split("@")[0];
 }
 
+// Research data often stores URLs without a protocol (e.g. "acmehealth.com"). Used bare as an
+// <a href>, that's a relative link and opens under the current page instead of the real site.
+export function normalizeUrl(url: string) {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 export function isStale(updatedAt: string) {
   const days = Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
   return days >= STALE_AFTER_DAYS;

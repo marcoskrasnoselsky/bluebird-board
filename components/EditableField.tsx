@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Pencil } from "lucide-react";
+import { normalizeUrl } from "@/lib/types";
 
 export default function EditableField({
   label,
@@ -70,7 +71,7 @@ export default function EditableField({
         </div>
       ) : value ? (
         link ? (
-          <a href={value} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#2F5233", wordBreak: "break-all" }}>
+          <a href={normalizeUrl(value)} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#2F5233", wordBreak: "break-all" }}>
             {value}
           </a>
         ) : (

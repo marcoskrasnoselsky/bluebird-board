@@ -28,6 +28,10 @@ export default function FilterSidebar({
   industryFilter,
   onIndustryFilter,
   industryOptions,
+  phoneFilter,
+  onPhoneFilter,
+  emailFilter,
+  onEmailFilter,
   myCompaniesActive,
   onToggleMyCompanies,
   onClearAll,
@@ -47,6 +51,10 @@ export default function FilterSidebar({
   industryFilter: string;
   onIndustryFilter: (v: string) => void;
   industryOptions: string[];
+  phoneFilter: string;
+  onPhoneFilter: (v: string) => void;
+  emailFilter: string;
+  onEmailFilter: (v: string) => void;
   myCompaniesActive: boolean;
   onToggleMyCompanies: () => void;
   onClearAll: () => void;
@@ -163,6 +171,29 @@ export default function FilterSidebar({
             </option>
           ))}
         </select>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div>
+          <label className="mono" style={{ fontSize: 10, color: "#6B6656" }}>
+            PHONE
+          </label>
+          <select value={phoneFilter} onChange={(e) => onPhoneFilter(e.target.value)} className="mono" style={{ ...selectStyle, marginTop: 4, padding: "9px 4px" }}>
+            <option value="All">Any</option>
+            <option value="Has">Has phone</option>
+            <option value="Missing">Missing</option>
+          </select>
+        </div>
+        <div>
+          <label className="mono" style={{ fontSize: 10, color: "#6B6656" }}>
+            EMAIL
+          </label>
+          <select value={emailFilter} onChange={(e) => onEmailFilter(e.target.value)} className="mono" style={{ ...selectStyle, marginTop: 4, padding: "9px 4px" }}>
+            <option value="All">Any</option>
+            <option value="Has">Has email</option>
+            <option value="Missing">Missing</option>
+          </select>
+        </div>
       </div>
 
       <button
